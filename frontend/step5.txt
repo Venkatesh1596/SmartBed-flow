@@ -1,0 +1,289 @@
+Created At: 2026-08-30T10:47:25+05:30
+Completed At: 2026-08-30T10:47:25+05:30
+File Path: `file:///C:/Users/venkatesh/OneDrive/Desktop/Smartbed-flow/frontend/src/api/dashboardApi.ts`
+Total Lines: 1080
+Total Bytes: 33589
+Showing lines 800 to 1080
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+800: 
+801: export async function fetchAdminConfiguration(): Promise<AdminConfiguration[]> {
+802:     const response = await fetch(`${API_BASE}/admin/configuration`, { headers: getAuthHeaders() });
+803:     return handleResponse(response);
+804: }
+805: 
+806: export async function fetchAdminUsers(): Promise<AdminUser[]> {
+807:     const response = await fetch(`${API_BASE}/admin/users`, { headers: getAuthHeaders() });
+808:     return handleResponse(response);
+809: }
+810: 
+811: export async function updateAdminUserStatus(userId: number, isActive: boolean): Promise<any> {
+812:     const response = await fetch(`${API_BASE}/admin/users/${userId}/status`, {
+813:         method: "PATCH",
+814:         headers: {
+815:             "Content-Type": "application/json",
+816:             ...getAuthHeaders()
+817:         },
+818:         body: JSON.stringify({ is_active: isActive })
+819:     });
+820:     return handleResponse(response);
+821: }
+822: 
+823: export async function updateAdminUserRole(userId: number, role: string): Promise<any> {
+824:     const response = await fetch(`${API_BASE}/admin/users/${userId}/role`, {
+825:         method: "PATCH",
+826:         headers: {
+827:             "Content-Type": "application/json",
+828:             ...getAuthHeaders()
+829:         },
+830:         body: JSON.stringify({ role })
+831:     });
+832:     return handleResponse(response);
+833: }
+834: 
+835: // --- Capacity Planning API ---
+836: 
+837: export interface CapacityPlanningSummary {
+838:     total_beds: number;
+839:     occupied: number;
+840:     available: number;
+841:     cleaning: number;
+842:     utilization_percent: number;
+843:     pressure_score: number;
+844: }
+845: 
+846: export interface WardCapacityItem {
+847:     ward_name: string;
+848:     total: number;
+849:     occupied: number;
+850:     available: number;
+851:     cleaning: number;
+852:     utilization: number;
+853: }
+854: 
+855: export interface AvailableSoonBed {
+856:     bed_id: number;
+857:     ward: string;
+858:     status: string;
+859:     estimated_available_mins: number;
+860: }
+861: 
+862: export interface CapacityTrend {
+863:     date: string;
+864:     utilization: number;
+865:     occupied: number;
+866:     available: number;
+867: }
+868: 
+869: export interface CapacityPriority {
+870:     id: number;
+871:     level: 'INFO' | 'WARNING' | 'HIGH' | 'CRITICAL';
+872:     message: string;
+873: }
+874: 
+875: export interface CapacityPressure {
+876:     score: number;
+877:     trend: 'up' | 'down' | 'stable';
+878:     factors: string[];
+879: }
+880: 
+881: export async function fetchCapacitySummary(): Promise<CapacityPlanningSummary> {
+882:     const response = await fetch(`${API_BASE}/capacity/summary`, { headers: getAuthHeaders() });
+883:     return handleResponse(response);
+884: }
+885: 
+886: export async function fetchWardCapacity(): Promise<WardCapacityItem[]> {
+887:     const response = await fetch(`${API_BASE}/capacity/wards`, { headers: getAuthHeaders() });
+888:     return handleResponse(response);
+889: }
+890: 
+891: export async function fetchAvailableSoonBeds(): Promise<AvailableSoonBed[]> {
+892:     const response = await fetch(`${API_BASE}/capacity/available-soon`, { headers: getAuthHeaders() });
+893:     return handleResponse(response);
+894: }
+895: 
+896: export async function fetchCapacityTrends(startDate?: string, endDate?: string): Promise<CapacityTrend[]> {
+897:     const params = new URLSearchParams();
+898:     if (startDate) params.append('start_date', startDate);
+899:     if (endDate) params.append('end_date', endDate);
+900:     const queryString = params.toString() ? `?${params.toString()}` : '';
+901:     const response = await fetch(`${API_BASE}/capacity/trends${queryString}`, { headers: getAuthHeaders() });
+902:     return handleResponse(response);
+903: }
+904: 
+905: export async function fetchCapacityPriorities(): Promise<CapacityPriority[]> {
+906:     const response = await fetch(`${API_BASE}/capacity/priorities`, { headers: getAuthHeaders() });
+907:     return handleResponse(response);
+908: }
+909: 
+910: export async function fetchCapacityPressure(): Promise<CapacityPressure> {
+911:     const response = await fetch(`${API_BASE}/capacity/pressure`, { headers: getAuthHeaders() });
+912:     return handleResponse(response);
+913: }
+914: 
+915: // --- Orchestration API ---
+916: 
+917: export interface OrchestrationSummary {
+918:     total_beds: number;
+919:     available_now: number;
+920:     available_soon: number;
+921:     occupied: number;
+922:     cleaning: number;
+923:     blocked: number;
+924:     high_pressure_wards: number;
+925: }
+926: 
+927: export interface AllocationCandidate {
+928:     id: string;
+929:     patient_name: string;
+930:     priority: string;
+931:     required_level: string;
+932:     wait_time_mins: number;
+933:     best_match_ward: string;
+934:     match_score: number;
+935: }
+936: 
+937: export interface WorkflowBlocker {
+938:     id: string;
+939:     type: string;
+940:     ward: string;
+941:     description: string;
+942:     duration_mins: number;
+943:     severity: string;
+944: }
+945: 
+946: export interface WardPressure {
+947:     ward_id: string;
+948:     ward_name: string;
+949:     current_occupancy: number;
+950:     capacity: number;
+951:     pending_admissions: number;
+952:     pending_discharges: number;
+953:     pressure_index: number;
+954: }
+955: 
+956: export interface OperationalQueueItem {
+957:     id: string;
+958:     task: string;
+959:     location: string;
+960:     assigned_to: string;
+961:     status: string;
+962:     priority: string;
+963:     created_at: string;
+964: }
+965: 
+966: export interface OrchestrationRecommendation {
+967:     id: string;
+968:     action: string;
+969:     target: string;
+970:     expected_impact: string;
+971:     confidence: number;
+972: }
+973: 
+974: export interface OrchestrationPressure {
+975:     overall_pressure: number;
+976:     trend: 'rising' | 'stable' | 'falling';
+977:     critical_wards: number;
+978:     bottleneck_type: string;
+979: }
+980: 
+981: export async function fetchOrchestrationSummary(): Promise<OrchestrationSummary> {
+982:     const response = await fetch(`${API_BASE}/orchestration/summary`, { headers: getAuthHeaders() });
+983:     return handleResponse(response);
+984: }
+985: 
+986: export async function fetchAllocationCandidates(): Promise<AllocationCandidate[]> {
+987:     const response = await fetch(`${API_BASE}/orchestration/allocation-candidates`, { headers: getAuthHeaders() });
+988:     return handleResponse(response);
+989: }
+990: 
+991: export async function fetchWorkflowBlockers(): Promise<WorkflowBlocker[]> {
+992:     const response = await fetch(`${API_BASE}/orchestration/workflow-blockers`, { headers: getAuthHeaders() });
+993:     return handleResponse(response);
+994: }
+995: 
+996: export async function fetchWardPressure(): Promise<WardPressure[]> {
+997:     const response = await fetch(`${API_BASE}/orchestration/ward-pressure`, { headers: getAuthHeaders() });
+998:     return handleResponse(response);
+999: }
+1000: 
+1001: export async function fetchOperationalQueue(): Promise<OperationalQueueItem[]> {
+1002:     const response = await fetch(`${API_BASE}/orchestration/operational-queue`, { headers: getAuthHeaders() });
+1003:     return handleResponse(response);
+1004: }
+1005: 
+1006: export async function fetchOrchestrationRecommendations(): Promise<OrchestrationRecommendation[]> {
+1007:     const response = await fetch(`${API_BASE}/orchestration/recommendations`, { headers: getAuthHeaders() });
+1008:     return handleResponse(response);
+1009: }
+1010: 
+1011: export async function fetchOrchestrationPressure(): Promise<OrchestrationPressure> {
+1012:     const response = await fetch(`${API_BASE}/orchestration/pressure`, { headers: getAuthHeaders() });
+1013:     return handleResponse(response);
+1014: }
+1015: 
+1016: // --- Predictive Operations API ---
+1017: 
+1018: export interface PredictiveSummary {
+1019:     early_warning_score: number;
+1020:     capacity_pressure: number;
+1021:     sla_pressure: number;
+1022:     cleaning_pressure: number;
+1023:     workflow_pressure: number;
+1024: }
+1025: 
+1026: export interface PredictiveTrendData {
+1027:     labels: string[];
+1028:     facility_pressure: number[];
+1029:     occupancy_prediction: number[];
+1030: }
+1031: 
+1032: export interface WardEarlyWarning {
+1033:     ward_id: number;
+1034:     ward_name: string;
+1035:     warning_score: number;
+1036:     pressure_level: string;
+1037:     predicted_occupancy: number;
+1038:     critical_blockers: number;
+1039: }
+1040: 
+1041: export interface PredictiveWarning {
+1042:     id: number;
+1043:     type: string;
+1044:     severity: string;
+1045:     message: string;
+1046:     timeframe: string;
+1047: }
+1048: 
+1049: export interface PredictiveRecommendation {
+1050:     id: number;
+1051:     action: string;
+1052:     impact: string;
+1053:     priority: string;
+1054: }
+1055: 
+1056: export async function fetchPredictiveSummary(): Promise<PredictiveSummary> {
+1057:     const response = await fetch(`${API_BASE}/predictive-operations/summary`, { headers: getAuthHeaders() });
+1058:     return handleResponse(response);
+1059: }
+1060: 
+1061: export async function fetchPredictiveTrends(days: number = 7): Promise<PredictiveTrendData> {
+1062:     const response = await fetch(`${API_BASE}/predictive-operations/trends?days=${days}`, { headers: getAuthHeaders() });
+1063:     return handleResponse(response);
+1064: }
+1065: 
+1066: export async function fetchPredictiveWards(): Promise<WardEarlyWarning[]> {
+1067:     const response = await fetch(`${API_BASE}/predictive-operations/wards`, { headers: getAuthHeaders() });
+1068:     return handleResponse(response);
+1069: }
+1070: 
+1071: export async function fetchPredictiveWarnings(): Promise<PredictiveWarning[]> {
+1072:     const response = await fetch(`${API_BASE}/predictive-operations/warnings`, { headers: getAuthHeaders() });
+1073:     return handleResponse(response);
+1074: }
+1075: 
+1076: export async function fetchPredictiveRecommendations(): Promise<PredictiveRecommendation[]> {
+1077:     const response = await fetch(`${API_BASE}/predictive-operations/recommendations`, { headers: getAuthHeaders() });
+1078:     return handleResponse(response);
+1079: }
+1080: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.

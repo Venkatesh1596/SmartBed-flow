@@ -1,0 +1,135 @@
+
+// --- Reporting API ---
+
+export interface ReportFilters {
+    start_date?: string;
+    end_date?: string;
+}
+
+export async function fetchReportSummary(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/summary`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchOccupancyReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/occupancy`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchFlowReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/flow`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchTurnoverReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/turnover`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchSLAReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/sla`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchNotificationReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/notifications`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchAuditReport(filters?: ReportFilters): Promise<any> {
+    let url = `${API_BASE}/reports/audit`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function exportReportCSV(filters?: ReportFilters): Promise<void> {
+    let url = `${API_BASE}/reports/export/csv`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) {
+        throw new Error('Failed to export CSV');
+    }
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `report_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+export async function exportReportPDF(filters?: ReportFilters): Promise<void> {
+    let url = `${API_BASE}/reports/export/pdf`;
+    if (filters) {
+        const params = new URLSearchParams();
+        if (filters.start_date) params.append('start_date', filters.start_date);
+        if (filters.end_date) params.append('end_date', filters.end_date);
+        if (params.toString()) url += `?${params.toString()}`;
+    }
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    if (!response.ok) {
+        throw new Error('Failed to export PDF');
+    }
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `report_${new Date().toISOString().split('T')[0]}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}

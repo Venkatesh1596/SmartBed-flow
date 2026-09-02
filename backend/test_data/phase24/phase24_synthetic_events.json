@@ -1,0 +1,30 @@
+{
+  "journeys": [
+    {
+      "journey_id": "J-001",
+      "type": "ROUTINE",
+      "patient_id": "P-101",
+      "bed_id": "B-101",
+      "events": [
+        {"event_id": "E-001", "event_type": "Admission", "timestamp": "2024-01-01T08:00:00Z"},
+        {"event_id": "E-002", "event_type": "Clinical Milestone", "timestamp": "2024-01-03T09:00:00Z", "details": {"milestone": "Stable"}},
+        {"event_id": "E-003", "event_type": "Discharge Readiness", "timestamp": "2024-01-04T08:00:00Z"},
+        {"event_id": "E-004", "event_type": "Discharge Order", "timestamp": "2024-01-04T10:00:00Z"},
+        {"event_id": "E-005", "event_type": "Cleaning", "timestamp": "2024-01-04T11:00:00Z", "details": {"status": "Complete"}},
+        {"event_id": "E-006", "event_type": "Bed-State", "timestamp": "2024-01-04T11:15:00Z", "details": {"state": "Safe"}}
+      ]
+    },
+    {
+      "journey_id": "J-002",
+      "type": "URGENT",
+      "patient_id": "P-102",
+      "bed_id": "B-102",
+      "events": [
+        {"event_id": "E-007", "event_type": "Admission", "timestamp": "2024-01-02T10:00:00Z"},
+        {"event_id": "E-008", "event_type": "Discharge Order", "timestamp": "2024-01-05T12:00:00Z"},
+        {"event_id": "E-009", "event_type": "Cleaning", "timestamp": "2024-01-05T08:00:00Z", "details": {"status": "Complete"}},
+        {"event_id": "E-010", "event_type": "Bed-State", "timestamp": "2024-01-05T13:00:00Z", "details": {"state": "Occupied"}}
+      ]
+    }
+  ]
+}

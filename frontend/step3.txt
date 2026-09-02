@@ -1,0 +1,808 @@
+Created At: 2026-08-30T10:47:20+05:30
+Completed At: 2026-08-30T10:47:20+05:30
+File Path: `file:///C:/Users/venkatesh/OneDrive/Desktop/Smartbed-flow/frontend/src/api/dashboardApi.ts`
+Total Lines: 1080
+Total Bytes: 33589
+Showing lines 1 to 800
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+1: export interface CapacitySummary {
+2:     total: number;
+3:     occupied: number;
+4:     ready: number;
+5:     turnover: number;
+6:     available: number;
+7: }
+8: 
+9: export interface BedDashboardRow {
+10:     bed_id: string;
+11:     ward: string;
+12:     readiness: string;
+13:     turnover: string;
+14:     freshness: string;
+15:     eta_minutes: number | null;
+16:     blocker: string;
+17: }
+18: 
+19: export interface EmergencyDemand {
+20:     critical: number;
+21:     urgent: number;
+22:     routine: number;
+23: }
+24: 
+25: export interface DashboardSummary {
+26:     capacity: CapacitySummary;
+27:     beds: BedDashboardRow[];
+28:     emergency_demand: EmergencyDemand;
+29: }
+30: 
+31: const API_BASE = 'http://127.0.0.1:8000/api';
+32: 
+33: const getAuthHeaders = (): Record<string, string> => {
+34:     const token = localStorage.getItem('token');
+35:     return token ? { 'Authorization': `Bearer ${token}` } : {};
+36: };
+37: 
+38: const handleResponse = async (response: Response) => {
+39:     if (response.status === 401) {
+40:         throw new Error('Unauthorized');
+41:     }
+42:     if (!response.ok) {
+43:         throw new Error('Backend connection unavailable');
+44:     }
+45:     return response.json();
+46: };
+47: 
+48: export async function fetchDashboardSummary(): Promise<DashboardSummary> {
+49:     const response = await fetch(`${API_BASE}/dashboard/summary`, {
+50:         headers: getAuthHeaders()
+51:     });
+52:     return handleResponse(response);
+53: }
+54: 
+55: export interface Bed {
+56:     id: number;
+57:     name: string;
+58:     ward_id: number;
+59:     state: string;
+60:     [key: string]: any;
+61: }
+62: 
+63: export interface HospitalEvent {
+64:     id: number;
+65:     type: string;
+66:     timestamp: string;
+67:     details: any;
+68:     [key: string]: any;
+69: }
+70: 
+71: export async function fetchBeds(): Promise<Bed[]> {
+72:     const response = await fetch(`${API_BASE}/beds`, {
+73:         headers: getAuthHeaders()
+74:     });
+75:     return handleResponse(response);
+76: }
+77: 
+78: export async function createBed(bedData: Partial<Bed>): Promise<Bed> {
+79:     const response = await fetch(`${API_BASE}/beds`, {
+80:         method: 'POST',
+81:         headers: {
+82:             'Content-Type': 'application/json',
+83:             ...getAuthHeaders()
+84:         },
+85:         body: JSON.stringify(bedData)
+86:     });
+87:     return handleResponse(response);
+88: }
+89: 
+90: export async function updateBed(bedId: number, bedData: Partial<Bed>): Promise<Bed> {
+91:     const response = await fetch(`${API_BASE}/beds/${bedId}`, {
+92:         method: 'PUT',
+93:         headers: {
+94:             'Content-Type': 'application/json',
+95:             ...getAuthHeaders()
+96:         },
+97:         body: JSON.stringify(bedData)
+98:     });
+99:     return handleResponse(response);
+100: }
+101: 
+102: export async function updateBedStatus(bedId: number, state: string): Promise<Bed> {
+103:     const response = await fetch(`${API_BASE}/beds/${bedId}/status`, {
+104:         method: 'PATCH',
+105:         headers: {
+106:             'Content-Type': 'application/json',
+107:             ...getAuthHeaders()
+108:         },
+109:         body: JSON.stringify({ state })
+110:     });
+111:     return handleResponse(response);
+112: }
+113: 
+114: export async function admitPatient(bedId: number, patientData: any): Promise<any> {
+115:     const response = await fetch(`${API_BASE}/beds/${bedId}/admit`, {
+116:         method: 'POST',
+117:         headers: {
+118:             'Content-Type': 'application/json',
+119:             ...getAuthHeaders()
+120:         },
+121:         body: JSON.stringify(patientData)
+122:     });
+123:     return handleResponse(response);
+124: }
+125: 
+126: export async function dischargePatient(bedId: number): Promise<any> {
+127:     const response = await fetch(`${API_BASE}/beds/${bedId}/discharge`, {
+128:         method: 'POST',
+129:         headers: {
+130:             'Content-Type': 'application/json',
+131:             ...getAuthHeaders()
+132:         }
+133:     });
+134:     return handleResponse(response);
+135: }
+136: 
+137: export async function fetchEvents(): Promise<HospitalEvent[]> {
+138:     const response = await fetch(`${API_BASE}/events`, {
+139:         headers: getAuthHeaders()
+140:     });
+141:     return handleResponse(response);
+142: }
+143: 
+144: export async function createEvent(eventData: Partial<HospitalEvent>): Promise<HospitalEvent> {
+145:     const response = await fetch(`${API_BASE}/events`, {
+146:         method: 'POST',
+147:         headers: {
+148:             'Content-Type': 'application/json',
+149:             ...getAuthHeaders()
+150:         },
+151:         body: JSON.stringify(eventData)
+152:     });
+153:     return handleResponse(response);
+154: }
+155: 
+156: export async function updateEvent(eventId: number, eventData: Partial<HospitalEvent>): Promise<HospitalEvent> {
+157:     const response = await fetch(`${API_BASE}/events/${eventId}`, {
+158:         method: 'PUT',
+159:         headers: {
+160:             'Content-Type': 'application/json',
+161:             ...getAuthHeaders()
+162:         },
+163:         body: JSON.stringify(eventData)
+164:     });
+165:     return handleResponse(response);
+166: }
+167: 
+168: export interface OccupancyTrendData {
+169:     labels: string[];
+170:     occupied: number[];
+171:     available: number[];
+172:     cleaning: number[];
+173: }
+174: 
+175: export interface FlowAnalyticsData {
+176:     labels: string[];
+177:     admissions: number[];
+178:     discharges: number[];
+179: }
+180: 
+181: export interface TurnoverSummary {
+182:     average_turnover_minutes: number;
+183:     bottlenecks: Record<string, number>;
+184: }
+185: 
+186: export interface DashboardAlert {
+187:     id: number;
+188:     severity: string;
+189:     message: string;
+190:     timestamp: string;
+191: }
+192: 
+193: export async function fetchOccupancyTrend(days: number = 7): Promise<OccupancyTrendData> {
+194:     const response = await fetch(`${API_BASE}/dashboard/occupancy-trend?days=${days}`, {
+195:         headers: getAuthHeaders()
+196:     });
+197:     return handleResponse(response);
+198: }
+199: 
+200: export async function fetchFlowAnalytics(days: number = 7): Promise<FlowAnalyticsData> {
+201:     const response = await fetch(`${API_BASE}/dashboard/flow-analytics?days=${days}`, {
+202:         headers: getAuthHeaders()
+203:     });
+204:     return handleResponse(response);
+205: }
+206: 
+207: export async function fetchTurnoverSummary(): Promise<TurnoverSummary> {
+208:     const response = await fetch(`${API_BASE}/dashboard/turnover-summary`, {
+209:         headers: getAuthHeaders()
+210:     });
+211:     return handleResponse(response);
+212: }
+213: 
+214: export async function fetchDashboardAlerts(): Promise<DashboardAlert[]> {
+215:     const response = await fetch(`${API_BASE}/dashboard/alerts`, {
+216:         headers: getAuthHeaders()
+217:     });
+218:     return handleResponse(response);
+219: }
+220: 
+221: export interface PredictionSummary {
+222:     predicted_admissions: number;
+223:     predicted_discharges: number;
+224:     net_capacity_change: number;
+225: }
+226: 
+227: export interface BedAvailabilityPrediction {
+228:     bed_id: number;
+229:     probability_available_soon: number;
+230:     estimated_time_to_available: number;
+231:     status_flag?: string;
+232: }
+233: 
+234: export interface Bottleneck {
+235:     resource: string;
+236:     severity: string;
+237:     impact: string;
+238: }
+239: 
+240: export interface OperationalRecommendation {
+241:     action: string;
+242:     priority: string;
+243:     reason: string;
+244: }
+245: 
+246: export async function fetchPredictionSummary(): Promise<PredictionSummary> {
+247:     const response = await fetch(`${API_BASE}/predictions/summary`, {
+248:         headers: getAuthHeaders()
+249:     });
+250:     return handleResponse(response);
+251: }
+252: 
+253: export async function fetchBedAvailabilityPredictions(): Promise<BedAvailabilityPrediction[]> {
+254:     const response = await fetch(`${API_BASE}/predictions/beds`, {
+255:         headers: getAuthHeaders()
+256:     });
+257:     return handleResponse(response);
+258: }
+259: 
+260: export async function fetchBottlenecks(): Promise<Bottleneck[]> {
+261:     const response = await fetch(`${API_BASE}/predictions/bottlenecks`, {
+262:         headers: getAuthHeaders()
+263:     });
+264:     return handleResponse(response);
+265: }
+266: 
+267: export async function fetchOperationalRecommendations(): Promise<OperationalRecommendation[]> {
+268:     const response = await fetch(`${API_BASE}/predictions/recommendations`, {
+269:         headers: getAuthHeaders()
+270:     });
+271:     return handleResponse(response);
+272: }
+273: 
+274: export interface CommandCenterSummary {
+275:     hospital_status?: string;
+276:     total_capacity?: number;
+277:     current_occupancy?: number;
+278:     pending_admissions?: number;
+279:     pending_discharges?: number;
+280:     active_alerts?: number;
+281:     bottlenecks_detected?: number;
+282: }
+283: 
+284: export interface WardOperationalSummary {
+285:     ward_id?: number;
+286:     ward_name?: string;
+287:     capacity?: number;
+288:     occupancy?: number;
+289:     available?: number;
+290:     pending_admissions?: number;
+291:     pending_discharges?: number;
+292:     status?: string;
+293: }
+294: 
+295: export interface BedPriorityItem {
+296:     id?: number;
+297:     request_type?: string;
+298:     priority?: string;
+299:     wait_time_mins?: number;
+300:     requested_ward?: string;
+301: }
+302: 
+303: export interface DischargeQueueItem {
+304:     bed_id?: number;
+305:     ward?: string;
+306: 
+307:     status?: string;
+308:     bottleneck?: string;
+309:     estimated_time?: string;
+310: }
+311: 
+312: export interface CommandCenterPriority {
+313:     id?: number;
+314:     type?: string;
+315:     description?: string;
+316:     severity?: string;
+317: }
+318: 
+319: export async function fetchCommandCenterSummary(): Promise<CommandCenterSummary> {
+320:     const response = await fetch(`${API_BASE}/command-center/summary`, {
+321:         headers: getAuthHeaders()
+322:     });
+323:     return handleResponse(response);
+324: }
+325: 
+326: export async function fetchWardOperationalSummary(): Promise<WardOperationalSummary[]> {
+327:     const response = await fetch(`${API_BASE}/command-center/wards`, {
+328:         headers: getAuthHeaders()
+329:     });
+330:     return handleResponse(response);
+331: }
+332: 
+333: export async function fetchBedPriority(): Promise<BedPriorityItem[]> {
+334:     const response = await fetch(`${API_BASE}/command-center/bed-priority`, {
+335:         headers: getAuthHeaders()
+336:     });
+337:     return handleResponse(response);
+338: }
+339: 
+340: export async function fetchDischargeQueue(): Promise<DischargeQueueItem[]> {
+341:     const response = await fetch(`${API_BASE}/command-center/discharge-queue`, {
+342:         headers: getAuthHeaders()
+343:     });
+344:     return handleResponse(response);
+345: }
+346: 
+347: export async function fetchCommandCenterPriorities(): Promise<CommandCenterPriority[]> {
+348:     const response = await fetch(`${API_BASE}/command-center/priorities`, {
+349:         headers: getAuthHeaders()
+350:     });
+351:     return handleResponse(response);
+352: }
+353: 
+354: export interface SLASummary {
+355:     on_track: number;
+356:     approaching: number;
+357:     overdue: number;
+358:     critical: number;
+359: }
+360: 
+361: export interface SLAWorkflow {
+362:     id: number;
+363:     bed_id: number;
+364:     workflow_type: string;
+365:     status: string;
+366:     sla_status: string;
+367:     elapsed_time?: string;
+368:     time_remaining?: string;
+369:     overdue_by?: string;
+370: }
+371: 
+372: export interface BedSLA {
+373:     bed_id: number;
+374:     sla_status: string;
+375:     workflow_type: string;
+376: }
+377: 
+378: export async function fetchSLASummary(): Promise<SLASummary> {
+379:     const response = await fetch(`${API_BASE}/sla/summary`, {
+380:         headers: getAuthHeaders()
+381:     });
+382:     return handleResponse(response);
+383: }
+384: 
+385: export async function fetchSLAWorkflows(): Promise<SLAWorkflow[]> {
+386:     const response = await fetch(`${API_BASE}/sla/workflows`, {
+387:         headers: getAuthHeaders()
+388:     });
+389:     return handleResponse(response);
+390: }
+391: 
+392: export async function fetchOverdueSLAWorkflows(): Promise<SLAWorkflow[]> {
+393:     const response = await fetch(`${API_BASE}/sla/workflows/overdue`, {
+394:         headers: getAuthHeaders()
+395:     });
+396:     return handleResponse(response);
+397: }
+398: 
+399: export async function fetchBedSLA(bedId: number): Promise<BedSLA> {
+400:     const response = await fetch(`${API_BASE}/beds/${bedId}/sla`, {
+401:         headers: getAuthHeaders()
+402:     });
+403:     return handleResponse(response);
+404: }
+405: 
+406: export interface AppNotification {
+407:     id: number;
+408:     title: string;
+409:     message: string;
+410:     type: string;
+411:     is_read: boolean;
+412:     created_at: string;
+413: }
+414: 
+415: export async function fetchNotifications(): Promise<AppNotification[]> {
+416:     const response = await fetch(`${API_BASE}/notifications`, {
+417:         headers: getAuthHeaders()
+418:     });
+419:     return handleResponse(response);
+420: }
+421: 
+422: export async function fetchUnreadNotificationCount(): Promise<number> {
+423:     const response = await fetch(`${API_BASE}/notifications/unread-count`, {
+424:         headers: getAuthHeaders()
+425:     });
+426:     const data = await handleResponse(response);
+427:     return data.count;
+428: }
+429: 
+430: export async function generateNotifications(): Promise<any> {
+431:     const response = await fetch(`${API_BASE}/notifications/generate`, {
+432:         method: 'POST',
+433:         headers: {
+434:             'Content-Type': 'application/json',
+435:             ...getAuthHeaders()
+436:         }
+437:     });
+438:     return handleResponse(response);
+439: }
+440: 
+441: export async function markNotificationRead(id: number): Promise<any> {
+442:     const response = await fetch(`${API_BASE}/notifications/${id}/read`, {
+443:         method: 'POST',
+444:         headers: {
+445:             'Content-Type': 'application/json',
+446:             ...getAuthHeaders()
+447:         }
+448:     });
+449:     return handleResponse(response);
+450: }
+451: 
+452: export async function markAllNotificationsRead(): Promise<any> {
+453:     const response = await fetch(`${API_BASE}/notifications/read-all`, {
+454:         method: 'POST',
+455:         headers: {
+456:             'Content-Type': 'application/json',
+457:             ...getAuthHeaders()
+458:         }
+459:     });
+460:     return handleResponse(response);
+461: }
+462: 
+463: export interface AuditLog {
+464:     id: number;
+465:     timestamp: string;
+466:     user_id: number;
+467:     username: string;
+468:     action: string;
+469:     module: string;
+470:     entity_type: string;
+471:     entity_id: string;
+472:     details: Record<string, any>;
+473: }
+474: 
+475: export interface AuditLogFilters {
+476:     action?: string;
+477:     module?: string;
+478:     entity_type?: string;
+479:     entity_id?: string;
+480:     start_date?: string;
+481:     end_date?: string;
+482:     skip?: number;
+483:     limit?: number;
+484: }
+485: 
+486: export interface AuditSummary {
+487:     total_actions: number;
+488:     recent_actions: AuditLog[];
+489:     actions_by_module: Record<string, number>;
+490: }
+491: 
+492: export async function fetchAuditLogs(filters?: AuditLogFilters): Promise<AuditLog[]> {
+493:     let url = `${API_BASE}/audit/logs`;
+494:     if (filters) {
+495:         const params = new URLSearchParams();
+496:         Object.entries(filters).forEach(([key, value]) => {
+497:             if (value !== undefined) params.append(key, String(value));
+498:         });
+499:         const queryStr = params.toString();
+500:         if (queryStr) url += '?' + queryStr;
+501:     }
+502:     const response = await fetch(url, {
+503:         headers: getAuthHeaders()
+504:     });
+505:     return handleResponse(response);
+506: }
+507: 
+508: export async function fetchMyAuditLogs(filters?: AuditLogFilters): Promise<AuditLog[]> {
+509:     let url = `${API_BASE}/audit/logs/me`;
+510:     if (filters) {
+511:         const params = new URLSearchParams();
+512:         Object.entries(filters).forEach(([key, value]) => {
+513:             if (value !== undefined) params.append(key, String(value));
+514:         });
+515:         const queryStr = params.toString();
+516:         if (queryStr) url += '?' + queryStr;
+517:     }
+518:     const response = await fetch(url, {
+519:         headers: getAuthHeaders()
+520:     });
+521:     return handleResponse(response);
+522: }
+523: 
+524: export async function fetchAuditSummary(): Promise<AuditSummary> {
+525:     const response = await fetch(`${API_BASE}/audit/summary`, {
+526:         headers: getAuthHeaders()
+527:     });
+528:     return handleResponse(response);
+529: }
+530: 
+531: // --- Reporting API ---
+532: 
+533: export interface ReportFilters {
+534:     start_date?: string;
+535:     end_date?: string;
+536: }
+537: 
+538: export async function fetchReportSummary(filters?: ReportFilters): Promise<any> {
+539:     let url = `${API_BASE}/reports/summary`;
+540:     if (filters) {
+541:         const params = new URLSearchParams();
+542:         if (filters.start_date) params.append('start_date', filters.start_date);
+543:         if (filters.end_date) params.append('end_date', filters.end_date);
+544:         if (params.toString()) url += `?${params.toString()}`;
+545:     }
+546:     const response = await fetch(url, { headers: getAuthHeaders() });
+547:     return handleResponse(response);
+548: }
+549: 
+550: export async function fetchOccupancyReport(filters?: ReportFilters): Promise<any> {
+551:     let url = `${API_BASE}/reports/occupancy`;
+552:     if (filters) {
+553:         const params = new URLSearchParams();
+554:         if (filters.start_date) params.append('start_date', filters.start_date);
+555:         if (filters.end_date) params.append('end_date', filters.end_date);
+556:         if (params.toString()) url += `?${params.toString()}`;
+557:     }
+558:     const response = await fetch(url, { headers: getAuthHeaders() });
+559:     return handleResponse(response);
+560: }
+561: 
+562: export async function fetchFlowReport(filters?: ReportFilters): Promise<any> {
+563:     let url = `${API_BASE}/reports/flow`;
+564:     if (filters) {
+565:         const params = new URLSearchParams();
+566:         if (filters.start_date) params.append('start_date', filters.start_date);
+567:         if (filters.end_date) params.append('end_date', filters.end_date);
+568:         if (params.toString()) url += `?${params.toString()}`;
+569:     }
+570:     const response = await fetch(url, { headers: getAuthHeaders() });
+571:     return handleResponse(response);
+572: }
+573: 
+574: export async function fetchTurnoverReport(filters?: ReportFilters): Promise<any> {
+575:     let url = `${API_BASE}/reports/turnover`;
+576:     if (filters) {
+577:         const params = new URLSearchParams();
+578:         if (filters.start_date) params.append('start_date', filters.start_date);
+579:         if (filters.end_date) params.append('end_date', filters.end_date);
+580:         if (params.toString()) url += `?${params.toString()}`;
+581:     }
+582:     const response = await fetch(url, { headers: getAuthHeaders() });
+583:     return handleResponse(response);
+584: }
+585: 
+586: export async function fetchSLAReport(filters?: ReportFilters): Promise<any> {
+587:     let url = `${API_BASE}/reports/sla`;
+588:     if (filters) {
+589:         const params = new URLSearchParams();
+590:         if (filters.start_date) params.append('start_date', filters.start_date);
+591:         if (filters.end_date) params.append('end_date', filters.end_date);
+592:         if (params.toString()) url += `?${params.toString()}`;
+593:     }
+594:     const response = await fetch(url, { headers: getAuthHeaders() });
+595:     return handleResponse(response);
+596: }
+597: 
+598: export async function fetchNotificationReport(filters?: ReportFilters): Promise<any> {
+599:     let url = `${API_BASE}/reports/notifications`;
+600:     if (filters) {
+601:         const params = new URLSearchParams();
+602:         if (filters.start_date) params.append('start_date', filters.start_date);
+603:         if (filters.end_date) params.append('end_date', filters.end_date);
+604:         if (params.toString()) url += `?${params.toString()}`;
+605:     }
+606:     const response = await fetch(url, { headers: getAuthHeaders() });
+607:     return handleResponse(response);
+608: }
+609: 
+610: export async function fetchAuditReport(filters?: ReportFilters): Promise<any> {
+611:     let url = `${API_BASE}/reports/audit`;
+612:     if (filters) {
+613:         const params = new URLSearchParams();
+614:         if (filters.start_date) params.append('start_date', filters.start_date);
+615:         if (filters.end_date) params.append('end_date', filters.end_date);
+616:         if (params.toString()) url += `?${params.toString()}`;
+617:     }
+618:     const response = await fetch(url, { headers: getAuthHeaders() });
+619:     return handleResponse(response);
+620: }
+621: 
+622: export async function exportReportCSV(filters?: ReportFilters): Promise<void> {
+623:     let url = `${API_BASE}/reports/export/csv`;
+624:     if (filters) {
+625:         const params = new URLSearchParams();
+626:         if (filters.start_date) params.append('start_date', filters.start_date);
+627:         if (filters.end_date) params.append('end_date', filters.end_date);
+628:         if (params.toString()) url += `?${params.toString()}`;
+629:     }
+630:     const response = await fetch(url, { headers: getAuthHeaders() });
+631:     if (!response.ok) {
+632:         throw new Error('Failed to export CSV');
+633:     }
+634:     const blob = await response.blob();
+635:     const downloadUrl = window.URL.createObjectURL(blob);
+636:     const a = document.createElement('a');
+637:     a.href = downloadUrl;
+638:     a.download = `report_${new Date().toISOString().split('T')[0]}.csv`;
+639:     document.body.appendChild(a);
+640:     a.click();
+641:     document.body.removeChild(a);
+642: }
+643: 
+644: export async function exportReportPDF(filters?: ReportFilters): Promise<void> {
+645:     let url = `${API_BASE}/reports/export/pdf`;
+646:     if (filters) {
+647:         const params = new URLSearchParams();
+648:         if (filters.start_date) params.append('start_date', filters.start_date);
+649:         if (filters.end_date) params.append('end_date', filters.end_date);
+650:         if (params.toString()) url += `?${params.toString()}`;
+651:     }
+652:     const response = await fetch(url, { headers: getAuthHeaders() });
+653:     if (!response.ok) {
+654:         throw new Error('Failed to export PDF');
+655:     }
+656:     const blob = await response.blob();
+657:     const downloadUrl = window.URL.createObjectURL(blob);
+658:     const a = document.createElement('a');
+659:     a.href = downloadUrl;
+660:     a.download = `report_${new Date().toISOString().split('T')[0]}.pdf`;
+661:     document.body.appendChild(a);
+662:     a.click();
+663:     document.body.removeChild(a);
+664: }
+665: 
+666: // --- Executive Dashboard API ---
+667: 
+668: export interface ExecutiveSummary {
+669:     occupancy_rate: number;
+670:     admissions_total: number;
+671:     discharges_total: number;
+672:     avg_turnover_time: number;
+673: }
+674: 
+675: export interface ExecutivePerformance {
+676:     kpi: string;
+677:     value: string | number;
+678:     target: string | number;
+679:     status: string;
+680: }
+681: 
+682: export interface ExecutiveWard {
+683:     ward_name: string;
+684:     occupancy_rate: number;
+685:     admissions: number;
+686:     discharges: number;
+687:     avg_turnover_time: number;
+688: }
+689: 
+690: export interface ExecutiveTrend {
+691:     date: string;
+692:     occupancy_rate?: number;
+693:     admissions?: number;
+694:     discharges?: number;
+695: }
+696: 
+697: export interface ExecutiveComparison {
+698:     metric: string;
+699:     current_period: number;
+700:     previous_period: number;
+701:     change_percentage: number;
+702: }
+703: 
+704: export interface ExecutiveAttention {
+705:     area: string;
+706:     issue: string;
+707:     impact: string;
+708: }
+709: 
+710: export interface ExecutivePriority {
+711:     priority: string;
+712:     action: string;
+713:     status: string;
+714: }
+715: 
+716: export async function fetchExecutiveSummary(days?: number): Promise<ExecutiveSummary> {
+717:     const url = `${API_BASE}/executive/summary${days ? `?days=${days}` : ''}`;
+718:     const response = await fetch(url, { headers: getAuthHeaders() });
+719:     return handleResponse(response);
+720: }
+721: 
+722: export async function fetchExecutivePerformance(days?: number): Promise<ExecutivePerformance[]> {
+723:     const url = `${API_BASE}/executive/performance${days ? `?days=${days}` : ''}`;
+724:     const response = await fetch(url, { headers: getAuthHeaders() });
+725:     return handleResponse(response);
+726: }
+727: 
+728: export async function fetchExecutiveWards(days?: number): Promise<ExecutiveWard[]> {
+729:     const url = `${API_BASE}/executive/wards${days ? `?days=${days}` : ''}`;
+730:     const response = await fetch(url, { headers: getAuthHeaders() });
+731:     return handleResponse(response);
+732: }
+733: 
+734: export async function fetchExecutiveTrends(days?: number): Promise<ExecutiveTrend[]> {
+735:     const url = `${API_BASE}/executive/trends${days ? `?days=${days}` : ''}`;
+736:     const response = await fetch(url, { headers: getAuthHeaders() });
+737:     return handleResponse(response);
+738: }
+739: 
+740: export async function fetchExecutiveComparison(days?: number): Promise<ExecutiveComparison[]> {
+741:     const url = `${API_BASE}/executive/comparison${days ? `?days=${days}` : ''}`;
+742:     const response = await fetch(url, { headers: getAuthHeaders() });
+743:     return handleResponse(response);
+744: }
+745: 
+746: export async function fetchExecutiveAttention(days?: number): Promise<ExecutiveAttention[]> {
+747:     const url = `${API_BASE}/executive/attention${days ? `?days=${days}` : ''}`;
+748:     const response = await fetch(url, { headers: getAuthHeaders() });
+749:     return handleResponse(response);
+750: }
+751: 
+752: export async function fetchExecutivePriorities(days?: number): Promise<ExecutivePriority[]> {
+753:     const url = `${API_BASE}/executive/priorities${days ? `?days=${days}` : ''}`;
+754:     const response = await fetch(url, { headers: getAuthHeaders() });
+755:     return handleResponse(response);
+756: }
+757: 
+758: 
+759: // --- Admin API ---
+760: 
+761: export interface AdminSummary {
+762:     total_users: number;
+763:     active_users: number;
+764:     system_status: string;
+765:     last_backup: string;
+766: }
+767: 
+768: export interface SystemHealth {
+769:     status: string;
+770:     cpu_usage: number;
+771:     memory_usage: number;
+772:     database_connected: boolean;
+773:     uptime: string;
+774: }
+775: 
+776: export interface AdminConfiguration {
+777:     setting_key: string;
+778:     setting_value: string;
+779:     description: string;
+780: }
+781: 
+782: export interface AdminUser {
+783:     id: number;
+784:     username: string;
+785:     email: string;
+786:     role: string;
+787:     is_active: boolean;
+788:     last_login: string;
+789: }
+790: 
+791: export async function fetchAdminSummary(): Promise<AdminSummary> {
+792:     const response = await fetch(`${API_BASE}/admin/summary`, { headers: getAuthHeaders() });
+793:     return handleResponse(response);
+794: }
+795: 
+796: export async function fetchSystemHealth(): Promise<SystemHealth> {
+797:     const response = await fetch(`${API_BASE}/admin/health`, { headers: getAuthHeaders() });
+798:     return handleResponse(response);
+799: }
+800: 
+The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
