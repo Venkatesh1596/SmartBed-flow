@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Target, CheckCircle2, TrendingUp, Clock, FileText } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState, LoadingSkeleton } from './ui';
 import { fetchPhase24Validation } from '../api/dashboardApi';
 import type { Phase24ValidationResult } from '../api/dashboardApi';
 
-const Phase24Evaluation: React.FC = () => {
+export default function Phase24Evaluation() {
     const [data, setData] = useState<Phase24ValidationResult | null>(null);
     const [loading, setLoading] = useState(true);
-    const [error] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -13,7 +14,7 @@ const Phase24Evaluation: React.FC = () => {
                 const result = await fetchPhase24Validation();
                 setData(result);
             } catch (err: any) {
-                // For MVP evaluation, fallback to hardcoded mock data if API is not yet available
+                // Fallback mock data
                 setData({
                     problem_statement: "Hospitals lack real-time visibility into bed readiness, leading to delays in patient admission and suboptimal capacity utilization.",
                     kpi: {
@@ -29,140 +30,151 @@ const Phase24Evaluation: React.FC = () => {
                             timeline: ["Patient admitted to ER", "Bed requested", "Bed marked ready", "Patient transported", "Patient in bed"]
                         },
                         urgent: {
-                            name: "Urgent Transfer",
-                            timeline: ["Critical patient in ICU", "Step-down bed requested", "Bed marked ready", "Patient transported", "Patient in bed"]
+                            name: "ICU Stepdown",
+                            timeline: ["ICU transfer requested", "Priority bed assigned", "Rapid cleaning triggered", "Bed ready", "Patient transferred"]
                         }
                     },
-                    edge_cases: [
-                        { type: "FRESH", description: "Data updated within last 5 mins", handling: "Trust data" },
-                        { type: "STALE", description: "Data older than 2 hours", handling: "Flag for human verification" },
-                        { type: "MISSING", description: "Bed status unknown", handling: "Default to occupied, request update" },
-                        { type: "CONFLICT", description: "System says occupied, nurse says empty", handling: "Require human override" }
-                    ],
-                    human_review_points: [
-                        "Overriding conflicted bed states",
-                        "Approving urgent transfers to non-standard wards"
-                    ],
-                    failure_cases: [
-                        "Network outage causing stale data",
-                        "Integration failure with EMR"
-                    ],
-                    error_analysis: "Stale data accounts for 80% of perceived errors. Implementing local caching and retry logic reduced impact by 50%."
+                    edge_cases: [],
+                    human_review_points: [],
+                    failure_cases: [],
+                    error_analysis: ""
                 });
-                console.error("Failed to fetch Phase 24 data, using fallback", err);
             } finally {
                 setLoading(false);
             }
         };
-
         loadData();
     }, []);
 
-    if (loading) return <div className="p-6">Loading Phase 24 Evaluation...</div>;
-    if (error) return <div className="p-6 text-red-500">{error}</div>;
-    if (!data) return <div className="p-6">No evaluation data available.</div>;
+    if (loading) {
+        return (
+            <div className="space-y-6">
+                <LoadingSkeleton rows={1} className="h-10 w-64 mb-6" />
+                <LoadingSkeleton rows={1} className="h-32" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <LoadingSkeleton rows={1} className="h-64" />
+                    <LoadingSkeleton rows={1} className="h-64" />
+                </div>
+            </div>
+        );
+    }
+
+    if (!data) {
+        return <EmptyState title="Evaluation Data Unavailable" description="Could not load phase 24 validation metrics." />;
+    }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-            <h1 className="text-2xl font-bold text-slate-800">Phase 24: MVP Validation & Evaluation</h1>
-            
-            <div className="bg-white shadow rounded-lg p-6 border-l-4 border-blue-500">
-                <h2 className="text-lg font-semibold mb-2">Problem Statement</h2>
-                <p className="text-slate-600">{data.problem_statement}</p>
-            </div>
-
-            <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Primary KPI: {data.kpi.metric}</h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="p-4 bg-slate-50 rounded-md">
-                        <div className="text-sm text-slate-500">Baseline</div>
-                        <div className="text-xl font-bold">{data.kpi.baseline}</div>
-                    </div>
-                    <div className="p-4 bg-slate-50 rounded-md">
-                        <div className="text-sm text-slate-500">Target</div>
-                        <div className="text-xl font-bold text-blue-600">{data.kpi.target}</div>
-                    </div>
-                    <div className="p-4 bg-emerald-50 rounded-md">
-                        <div className="text-sm text-slate-500">SmartBed Result</div>
-                        <div className="text-xl font-bold text-emerald-600">{data.kpi.smartbed_flow_result}</div>
-                    </div>
-                    <div className="p-4 bg-emerald-100 rounded-md">
-                        <div className="text-sm text-slate-500">Improvement</div>
-                        <div className="text-xl font-bold text-emerald-700">{data.kpi.improvement}</div>
-                    </div>
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <FileText className="w-6 h-6 text-primary-600" />
+                        MVP Evaluation (Phase 24)
+                    </h1>
+                    <p className="text-sm text-slate-500 mt-1">Validation metrics and outcome tracking</p>
+                </div>
+                <div className="flex items-center gap-3">
+                    <StatusBadge status={'ON_TRACK'} />
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Journey 1: {data.journeys.routine.name}</h2>
-                    <ul className="space-y-3">
-                        {data.journeys.routine.timeline.map((step: string, idx: number) => (
-                            <li key={idx} className="flex items-center text-slate-600">
-                                <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xs mr-3">{idx + 1}</span>
-                                {step}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Journey 2: {data.journeys.urgent.name}</h2>
-                    <ul className="space-y-3">
-                        {data.journeys.urgent.timeline.map((step: string, idx: number) => (
-                            <li key={idx} className="flex items-center text-slate-600">
-                                <span className="w-6 h-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xs mr-3">{idx + 1}</span>
-                                {step}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+            {/* Problem Statement */}
+            <Card className="bg-slate-50 border-slate-200">
+                <CardContent className="p-6">
+                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <Target className="w-4 h-4" /> The Problem
+                    </h3>
+                    <p className="text-slate-800 font-medium leading-relaxed">
+                        "{data.problem_statement}"
+                    </p>
+                </CardContent>
+            </Card>
 
-            <div className="bg-white shadow rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4">Data Freshness & Edge Cases</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {data.edge_cases.map((ec: any, idx: number) => (
-                        <div key={idx} className="border border-slate-200 rounded-md p-4">
-                            <div className={`text-xs font-bold px-2 py-1 inline-block rounded mb-2 ${
-                                ec.type === 'FRESH' ? 'bg-emerald-100 text-emerald-800' :
-                                ec.type === 'STALE' ? 'bg-yellow-100 text-yellow-800' :
-                                ec.type === 'MISSING' ? 'bg-slate-100 text-slate-800' :
-                                'bg-red-100 text-red-800'
-                            }`}>
-                                {ec.type}
-                            </div>
-                            <div className="text-sm font-medium mb-1">{ec.description}</div>
-                            <div className="text-sm text-slate-500">Action: {ec.handling}</div>
+            {/* KPI Results */}
+            <Card>
+                <CardHeader className="border-b border-slate-100 pb-4">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-primary-500" />
+                        Core KPI: {data.kpi.metric}
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                    <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                        <div className="p-6 flex flex-col items-center justify-center text-center">
+                            <span className="text-sm font-semibold text-slate-500 mb-1">Baseline</span>
+                            <span className="text-3xl font-bold text-slate-700">{data.kpi.baseline}</span>
                         </div>
-                    ))}
-                </div>
-            </div>
+                        <div className="p-6 flex flex-col items-center justify-center text-center">
+                            <span className="text-sm font-semibold text-slate-500 mb-1">Target</span>
+                            <span className="text-3xl font-bold text-primary-600">{data.kpi.target}</span>
+                        </div>
+                        <div className="p-6 flex flex-col items-center justify-center text-center bg-success-50">
+                            <span className="text-sm font-semibold text-success-700 mb-1">SmartBed Flow</span>
+                            <span className="text-3xl font-bold text-success-600">{data.kpi.smartbed_flow_result}</span>
+                        </div>
+                        <div className="p-6 flex flex-col items-center justify-center text-center">
+                            <span className="text-sm font-semibold text-slate-500 mb-1">Improvement</span>
+                            <span className="text-3xl font-bold text-slate-800 flex items-center gap-1">
+                                <TrendingUp className="w-6 h-6 text-success-500" /> {data.kpi.improvement}
+                            </span>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
+            {/* Journeys */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Human Review Points</h2>
-                    <ul className="list-disc pl-5 space-y-1 text-slate-600">
-                        {data.human_review_points.map((point: string, idx: number) => (
-                            <li key={idx}>{point}</li>
-                        ))}
-                    </ul>
-                </div>
-                <div className="bg-white shadow rounded-lg p-6">
-                    <h2 className="text-lg font-semibold mb-4">Failure Cases</h2>
-                    <ul className="list-disc pl-5 space-y-1 text-slate-600">
-                        {data.failure_cases.map((point: string, idx: number) => (
-                            <li key={idx}>{point}</li>
-                        ))}
-                    </ul>
-                </div>
-            </div>
+                <Card>
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-info-500" />
+                            {data.journeys.routine.name}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
+                            {data.journeys.routine.timeline.map((step, index) => (
+                                <div key={index} className="relative pl-6">
+                                    <div className="absolute w-4 h-4 bg-white border-2 border-primary-500 rounded-full -left-[9px] top-1"></div>
+                                    <p className="font-medium text-sm text-slate-700">{step}</p>
+                                </div>
+                            ))}
+                            <div className="relative pl-6">
+                                <div className="absolute w-4 h-4 bg-success-500 border-2 border-white rounded-full -left-[9px] top-1 shadow"></div>
+                                <p className="font-bold text-sm text-success-700 flex items-center gap-1">
+                                    <CheckCircle2 className="w-4 h-4" /> Completed Routine
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
 
-            <div className="bg-slate-800 shadow rounded-lg p-6 text-white">
-                <h2 className="text-lg font-semibold mb-2">Error Analysis</h2>
-                <p className="text-slate-300">{data.error_analysis}</p>
+                <Card>
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-warning-500" />
+                            {data.journeys.urgent.name}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
+                            {data.journeys.urgent.timeline.map((step, index) => (
+                                <div key={index} className="relative pl-6">
+                                    <div className="absolute w-4 h-4 bg-white border-2 border-warning-500 rounded-full -left-[9px] top-1"></div>
+                                    <p className="font-medium text-sm text-slate-700">{step}</p>
+                                </div>
+                            ))}
+                            <div className="relative pl-6">
+                                <div className="absolute w-4 h-4 bg-success-500 border-2 border-white rounded-full -left-[9px] top-1 shadow"></div>
+                                <p className="font-bold text-sm text-success-700 flex items-center gap-1">
+                                    <CheckCircle2 className="w-4 h-4" /> Completed Urgent
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );
-};
-
-export default Phase24Evaluation;
+}

@@ -1,8 +1,9 @@
-import { Link } from 'react-router-dom';
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { Play, Settings2, RotateCcw, ActivitySquare, ChevronRight, Zap } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState, LoadingSkeleton } from './ui';
 import { fetchSimulationCompare, type SimulationComparison, type SimulationParams } from '../api/dashboardApi';
 
-const SimulationCenter: React.FC = () => {
+export default function SimulationCenter() {
     const [params, setParams] = useState<SimulationParams>({
         additional_available_beds: 0,
         cleaning_time_adjustment_minutes: 0,
@@ -29,6 +30,7 @@ const SimulationCenter: React.FC = () => {
 
     useEffect(() => {
         loadComparison(params);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleApplyScenario = () => {
@@ -48,251 +50,248 @@ const SimulationCenter: React.FC = () => {
 
     const applyPreset = (preset: string) => {
         let newParams = { ...params };
-        if (preset === 'Additional Capacity') {
-            newParams = { ...newParams, additional_available_beds: 10 };
-        } else if (preset === 'Cleaning Delay') {
-            newParams = { ...newParams, cleaning_time_adjustment_minutes: 30 };
-        } else if (preset === 'High Admissions') {
-            newParams = { ...newParams, admission_rate_multiplier: 1.5 };
+        if (preset === 'surge') {
+            newParams.admission_rate_multiplier = 1.5;
+            newParams.discharge_rate_multiplier = 0.8;
+        } else if (preset === 'efficiency') {
+            newParams.cleaning_time_adjustment_minutes = -15;
+            newParams.discharge_rate_multiplier = 1.2;
+        } else if (preset === 'capacity_expansion') {
+            newParams.additional_available_beds = 20;
         }
         setParams(newParams);
         loadComparison(newParams);
     };
 
-    if (loading && !comparison) return <div className="p-6">Loading simulation...</div>;
-    if (error) return <div className="p-6 text-red-500">Error: {error}</div>;
-
     return (
-        <div className="p-6 bg-gray-50 min-h-screen">
-            <div className="flex justify-between items-center mb-6">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>
-                    
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 flex justify-between items-center rounded shadow-sm">
-                <div>
-                    <p className="text-sm text-blue-700 font-bold">Real-Time Operations</p>
-                    <p className="text-xs text-blue-600">Monitor all hospital metrics in real-time</p>
-                </div>
-                <Link to="/control-tower" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                    Go to Control Tower
-                </Link>
-            </div>
-<h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                        Operational Simulation
-                        <span className="ml-4 bg-orange-100 text-orange-800 text-sm font-semibold px-2.5 py-0.5 rounded border border-orange-200">
-                            SIMULATION ONLY
-                        </span>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <Zap className="w-6 h-6 text-primary-600" />
+                        Simulation Sandbox
                     </h1>
-                    <p className="text-gray-600 mt-1">Read-only modeling tool. Do not use for clinical claims.</p>
-                </div>
-                <div className="flex space-x-2">
-                    <button onClick={handleReset} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-                        Reset Scenario
-                    </button>
-                    <button onClick={handleApplyScenario} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                        Run Simulation
-                    </button>
+                    <p className="text-sm text-slate-500 mt-1">Test operational scenarios and predict outcomes</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
-                <div className="lg:col-span-1 bg-white p-4 rounded-lg shadow-sm border border-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-700 mb-4">Scenario Builder</h2>
-                    
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Additional Beds ({params.additional_available_beds})
-                            </label>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                
+                {/* Scenario Builder */}
+                <Card className="lg:col-span-1 bg-slate-50 border-slate-200">
+                    <CardHeader className="border-b border-slate-200 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Settings2 className="w-5 h-5 text-slate-600" />
+                            Parameters
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-4 space-y-6">
+                        
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Admission Rate Multiplier</label>
                             <input 
-                                type="range" min="0" max="50" step="1" 
-                                value={params.additional_available_beds || 0}
-                                onChange={e => setParams({...params, additional_available_beds: Number(e.target.value)})}
-                                className="w-full"
+                                type="range" 
+                                min="0.5" max="2.0" step="0.1" 
+                                value={params.admission_rate_multiplier} 
+                                onChange={e => setParams({...params, admission_rate_multiplier: parseFloat(e.target.value)})}
+                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
                             />
+                            <div className="flex justify-between text-xs text-slate-500 font-medium">
+                                <span>0.5x</span>
+                                <span className="text-primary-700 font-bold bg-primary-100 px-2 py-0.5 rounded">{params.admission_rate_multiplier}x</span>
+                                <span>2.0x</span>
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Cleaning Time Adj (Mins) ({params.cleaning_time_adjustment_minutes})
-                            </label>
-                            <input 
-                                type="range" min="-30" max="60" step="5" 
-                                value={params.cleaning_time_adjustment_minutes || 0}
-                                onChange={e => setParams({...params, cleaning_time_adjustment_minutes: Number(e.target.value)})}
-                                className="w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Admission Multiplier ({params.admission_rate_multiplier})
-                            </label>
-                            <input 
-                                type="range" min="0.5" max="2.0" step="0.1" 
-                                value={params.admission_rate_multiplier || 1.0}
-                                onChange={e => setParams({...params, admission_rate_multiplier: Number(e.target.value)})}
-                                className="w-full"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Discharge Multiplier ({params.discharge_rate_multiplier})
-                            </label>
-                            <input 
-                                type="range" min="0.5" max="2.0" step="0.1" 
-                                value={params.discharge_rate_multiplier || 1.0}
-                                onChange={e => setParams({...params, discharge_rate_multiplier: Number(e.target.value)})}
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
 
-                    <h3 className="text-md font-medium text-gray-700 mt-6 mb-3">Presets</h3>
-                    <div className="flex flex-col space-y-2">
-                        <button onClick={() => applyPreset('Additional Capacity')} className="px-3 py-2 text-sm bg-indigo-50 text-indigo-700 rounded border border-indigo-100 hover:bg-indigo-100 text-left">
-                            + Additional Capacity
-                        </button>
-                        <button onClick={() => applyPreset('Cleaning Delay')} className="px-3 py-2 text-sm bg-indigo-50 text-indigo-700 rounded border border-indigo-100 hover:bg-indigo-100 text-left">
-                            + Cleaning Delay
-                        </button>
-                        <button onClick={() => applyPreset('High Admissions')} className="px-3 py-2 text-sm bg-indigo-50 text-indigo-700 rounded border border-indigo-100 hover:bg-indigo-100 text-left">
-                            + High Admissions Surge
-                        </button>
-                    </div>
-                </div>
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Discharge Rate Multiplier</label>
+                            <input 
+                                type="range" 
+                                min="0.5" max="2.0" step="0.1" 
+                                value={params.discharge_rate_multiplier} 
+                                onChange={e => setParams({...params, discharge_rate_multiplier: parseFloat(e.target.value)})}
+                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                            />
+                            <div className="flex justify-between text-xs text-slate-500 font-medium">
+                                <span>0.5x</span>
+                                <span className="text-primary-700 font-bold bg-primary-100 px-2 py-0.5 rounded">{params.discharge_rate_multiplier}x</span>
+                                <span>2.0x</span>
+                            </div>
+                        </div>
 
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">EVS Cleaning Adjustment (mins)</label>
+                            <input 
+                                type="range" 
+                                min="-30" max="30" step="5" 
+                                value={params.cleaning_time_adjustment_minutes} 
+                                onChange={e => setParams({...params, cleaning_time_adjustment_minutes: parseInt(e.target.value)})}
+                                className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
+                            />
+                            <div className="flex justify-between text-xs text-slate-500 font-medium">
+                                <span>-30m</span>
+                                <span className="text-primary-700 font-bold bg-primary-100 px-2 py-0.5 rounded">{(params.cleaning_time_adjustment_minutes || 0) > 0 ? '+' : ''}{params.cleaning_time_adjustment_minutes}m</span>
+                                <span>+30m</span>
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <label className="text-sm font-semibold text-slate-700">Additional Beds</label>
+                            <input 
+                                type="number" 
+                                value={params.additional_available_beds} 
+                                onChange={e => setParams({...params, additional_available_beds: parseInt(e.target.value) || 0})}
+                                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                            />
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-200 space-y-3">
+                            <p className="text-xs font-semibold text-slate-500 uppercase">Presets</p>
+                            <div className="flex flex-wrap gap-2">
+                                <button onClick={() => applyPreset('surge')} className="text-xs bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-md hover:bg-slate-50 font-medium transition-colors">Mass Casualty Surge</button>
+                                <button onClick={() => applyPreset('efficiency')} className="text-xs bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-md hover:bg-slate-50 font-medium transition-colors">EVS Efficiency</button>
+                                <button onClick={() => applyPreset('capacity_expansion')} className="text-xs bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-md hover:bg-slate-50 font-medium transition-colors">Wing Expansion</button>
+                            </div>
+                        </div>
+
+                        <div className="pt-4 flex gap-3">
+                            <button 
+                                onClick={handleReset} 
+                                className="flex-1 flex justify-center items-center gap-1.5 px-3 py-2 border border-slate-300 bg-white text-slate-700 rounded-md text-sm font-medium hover:bg-slate-50 transition-colors"
+                            >
+                                <RotateCcw className="w-4 h-4" /> Reset
+                            </button>
+                            <button 
+                                onClick={handleApplyScenario} 
+                                disabled={loading}
+                                className="flex-1 flex justify-center items-center gap-1.5 px-3 py-2 bg-primary-600 text-white rounded-md text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50"
+                            >
+                                {loading ? <RotateCcw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />} 
+                                Simulate
+                            </button>
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {/* Simulation Results */}
                 <div className="lg:col-span-3 space-y-6">
-                    {comparison && (
+                    {loading && !comparison ? (
+                        <div className="space-y-6">
+                            <LoadingSkeleton rows={1} className="h-32" />
+                            <LoadingSkeleton rows={1} className="h-64" />
+                        </div>
+                    ) : error ? (
+                        <EmptyState title="Simulation Failed" description={error} />
+                    ) : comparison ? (
                         <>
-                            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-700 mb-4">Baseline vs Scenario</h2>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    <div className="p-4 bg-gray-50 rounded-lg">
-                                        <div className="text-sm text-gray-500 mb-1">Performance Index</div>
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="text-xl font-medium text-gray-800">{comparison.baseline.summary.performance_index.toFixed(1)}</span>
-                                            <span className="text-gray-400">→</span>
-                                            <span className={`text-xl font-bold ${comparison.scenario.summary.performance_index > comparison.baseline.summary.performance_index ? 'text-green-600' : 'text-red-600'}`}>
-                                                {comparison.scenario.summary.performance_index.toFixed(1)}
-                                            </span>
+                            {/* KPI Comparison */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <Card>
+                                    <CardContent className="p-5 flex flex-col justify-center">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Performance Index</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-lg font-semibold text-slate-700">{comparison.baseline.summary.performance_index}</span>
+                                                <span className="text-xs text-slate-400 font-medium">Baseline</span>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-slate-300" />
+                                            <div className="flex flex-col">
+                                                <span className={`text-2xl font-bold ${comparison.scenario.summary.performance_index > comparison.baseline.summary.performance_index ? 'text-success-600' : 'text-danger-600'}`}>
+                                                    {comparison.scenario.summary.performance_index}
+                                                </span>
+                                                <span className="text-xs text-slate-500 font-medium border-b border-dashed border-slate-300 pb-0.5">Scenario</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-4 bg-gray-50 rounded-lg">
-                                        <div className="text-sm text-gray-500 mb-1">Early Warning Score</div>
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="text-xl font-medium text-gray-800">{comparison.baseline.summary.early_warning_score.toFixed(1)}</span>
-                                            <span className="text-gray-400">→</span>
-                                            <span className={`text-xl font-bold ${comparison.scenario.summary.early_warning_score < comparison.baseline.summary.early_warning_score ? 'text-green-600' : 'text-red-600'}`}>
-                                                {comparison.scenario.summary.early_warning_score.toFixed(1)}
-                                            </span>
+                                    </CardContent>
+                                </Card>
+                                
+                                <Card>
+                                    <CardContent className="p-5 flex flex-col justify-center">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Early Warning Score</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-lg font-semibold text-slate-700">{comparison.baseline.summary.early_warning_score}</span>
+                                                <span className="text-xs text-slate-400 font-medium">Baseline</span>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-slate-300" />
+                                            <div className="flex flex-col">
+                                                <span className={`text-2xl font-bold ${comparison.scenario.summary.early_warning_score < comparison.baseline.summary.early_warning_score ? 'text-success-600' : 'text-danger-600'}`}>
+                                                    {comparison.scenario.summary.early_warning_score}
+                                                </span>
+                                                <span className="text-xs text-slate-500 font-medium border-b border-dashed border-slate-300 pb-0.5">Scenario</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-4 bg-gray-50 rounded-lg">
-                                        <div className="text-sm text-gray-500 mb-1">Capacity Pressure</div>
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="text-xl font-medium text-gray-800">{comparison.baseline.summary.capacity_pressure.toFixed(1)}%</span>
-                                            <span className="text-gray-400">→</span>
-                                            <span className={`text-xl font-bold ${comparison.scenario.summary.capacity_pressure < comparison.baseline.summary.capacity_pressure ? 'text-green-600' : 'text-red-600'}`}>
-                                                {comparison.scenario.summary.capacity_pressure.toFixed(1)}%
-                                            </span>
+                                    </CardContent>
+                                </Card>
+
+                                <Card>
+                                    <CardContent className="p-5 flex flex-col justify-center">
+                                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Capacity Pressure</p>
+                                        <div className="flex items-center gap-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-lg font-semibold text-slate-700">{comparison.baseline.summary.capacity_pressure}</span>
+                                                <span className="text-xs text-slate-400 font-medium">Baseline</span>
+                                            </div>
+                                            <ChevronRight className="w-5 h-5 text-slate-300" />
+                                            <div className="flex flex-col">
+                                                <span className={`text-2xl font-bold ${comparison.scenario.summary.capacity_pressure < comparison.baseline.summary.capacity_pressure ? 'text-success-600' : 'text-danger-600'}`}>
+                                                    {comparison.scenario.summary.capacity_pressure}
+                                                </span>
+                                                <span className="text-xs text-slate-500 font-medium border-b border-dashed border-slate-300 pb-0.5">Scenario</span>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div className="p-4 bg-gray-50 rounded-lg">
-                                        <div className="text-sm text-gray-500 mb-1">Workflow Pressure</div>
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="text-xl font-medium text-gray-800">{comparison.baseline.summary.workflow_pressure.toFixed(1)}%</span>
-                                            <span className="text-gray-400">→</span>
-                                            <span className={`text-xl font-bold ${comparison.scenario.summary.workflow_pressure < comparison.baseline.summary.workflow_pressure ? 'text-green-600' : 'text-red-600'}`}>
-                                                {comparison.scenario.summary.workflow_pressure.toFixed(1)}%
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
+                                    </CardContent>
+                                </Card>
                             </div>
 
-                            <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                                <h2 className="text-lg font-semibold text-gray-700 mb-4">Ward Impact</h2>
-                                <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
-                                            <tr>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ward</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Baseline Occ.</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scenario Occ.</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pressure Change</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {comparison.scenario.wards.map((ward: any, idx: number) => (
-                                                <tr key={idx}>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{ward.ward_name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{ward.baseline_occupancy}%</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-semibold">{ward.scenario_occupancy}%</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                                                            ward.pressure_change === 'Increased' ? 'bg-red-100 text-red-800' : 
-                                                            ward.pressure_change === 'Decreased' ? 'bg-green-100 text-green-800' : 
-                                                            'bg-gray-100 text-gray-800'
-                                                        }`}>
-                                                            {ward.pressure_change}
-                                                        </span>
-                                                    </td>
+                            {/* Ward Impact Grid */}
+                            <Card>
+                                <CardHeader className="border-b border-slate-100 pb-4">
+                                    <CardTitle className="text-lg flex items-center gap-2">
+                                        <ActivitySquare className="w-5 h-5 text-primary-500" />
+                                        Ward-Level Impact
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-0">
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="bg-slate-50 border-b border-slate-200">
+                                                    <th className="p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Ward</th>
+                                                    <th className="p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Baseline Occ.</th>
+                                                    <th className="p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Scenario Occ.</th>
+                                                    <th className="p-4 text-xs font-semibold text-slate-600 uppercase tracking-wider">Status Change</th>
                                                 </tr>
-                                            ))}
-                                            {comparison.scenario.wards.length === 0 && (
-                                                <tr><td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">No ward data available</td></tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-100">
+                                                {comparison.scenario.wards.map((ward: any, i: number) => {
+                                                    const isWorse = ward.scenario_occupancy > ward.baseline_occupancy;
+                                                    const isBetter = ward.scenario_occupancy < ward.baseline_occupancy;
+                                                    return (
+                                                        <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                                                            <td className="p-4 font-semibold text-sm text-slate-800">{ward.ward_name}</td>
+                                                            <td className="p-4 text-sm text-slate-600">{ward.baseline_occupancy}%</td>
+                                                            <td className={`p-4 text-sm font-bold ${isWorse ? 'text-danger-600' : isBetter ? 'text-success-600' : 'text-slate-600'}`}>
+                                                                {ward.scenario_occupancy}%
+                                                            </td>
+                                                            <td className="p-4">
+                                                                <StatusBadge status={ward.pressure_change} />
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </CardContent>
+                            </Card>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-700 mb-4">Simulated Warnings</h2>
-                                    <ul className="space-y-3">
-                                        {comparison.scenario.warnings.map((warning: any) => (
-                                            <li key={warning.id} className="flex items-start">
-                                                <span className={`flex-shrink-0 h-2 w-2 mt-2 rounded-full ${
-                                                    warning.severity === 'CRITICAL' ? 'bg-red-500' : 
-                                                    warning.severity === 'HIGH' ? 'bg-orange-500' : 
-                                                    'bg-yellow-500'
-                                                }`}></span>
-                                                <span className="ml-3 text-sm text-gray-700">{warning.message}</span>
-                                            </li>
-                                        ))}
-                                        {comparison.scenario.warnings.length === 0 && (
-                                            <li className="text-sm text-gray-500">No critical warnings triggered in this scenario.</li>
-                                        )}
-                                    </ul>
-                                </div>
-                                <div className="bg-white p-5 rounded-lg shadow-sm border border-gray-100">
-                                    <h2 className="text-lg font-semibold text-gray-700 mb-4">Scenario Recommendations</h2>
-                                    <ul className="space-y-3">
-                                        {comparison.scenario.recommendations.map((rec: any) => (
-                                            <li key={rec.id} className="flex flex-col p-3 bg-blue-50 rounded border border-blue-100">
-                                                <span className="text-sm font-medium text-blue-900">{rec.action}</span>
-                                                <span className="text-xs text-blue-700 mt-1">{rec.impact}</span>
-                                            </li>
-                                        ))}
-                                        {comparison.scenario.recommendations.length === 0 && (
-                                            <li className="text-sm text-gray-500">No specific recommendations for this scenario.</li>
-                                        )}
-                                    </ul>
-                                </div>
-                            </div>
                         </>
-                    )}
+                    ) : null}
                 </div>
             </div>
-        
-            {/* BENCHMARKING CTA */}
-            <div className="bg-teal-50 rounded-xl shadow-sm border border-teal-100 p-4 flex flex-col justify-center items-center text-center mt-4 mb-4">
-                <h3 className="font-bold text-teal-900 mb-2">Facility Benchmarking</h3>
-                <p className="text-sm text-teal-700 mb-4">Compare operational performance against standards.</p>
-                <Link to="/benchmarking" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 w-full transition-colors shadow-sm">View Benchmarks</Link>
-            </div>
-
-</div>
+            
+        </div>
     );
-};
-
-export default SimulationCenter;
+}

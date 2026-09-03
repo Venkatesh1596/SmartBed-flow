@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { RefreshCw, AlertTriangle, ActivitySquare, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { 
+    ActivitySquare, AlertCircle, AlertTriangle, TrendingUp, Zap, Target
+} from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState, LoadingSkeleton } from './ui';
 import {
     fetchPredictiveSummary,
     fetchPredictiveTrends,
@@ -13,358 +15,258 @@ import {
     type PredictiveWarning,
     type PredictiveRecommendation
 } from '../api/dashboardApi';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-} from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import 'chart.js/auto';
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend
-);
-
-const PredictiveOperations: React.FC = () => {
+export default function PredictiveOperations() {
     const [summary, setSummary] = useState<PredictiveSummary | null>(null);
-    const [trendData, setTrendData] = useState<PredictiveTrendData | null>(null);
+    const [trends, setTrends] = useState<PredictiveTrendData | null>(null);
     const [wards, setWards] = useState<WardEarlyWarning[]>([]);
     const [warnings, setWarnings] = useState<PredictiveWarning[]>([]);
     const [recommendations, setRecommendations] = useState<PredictiveRecommendation[]>([]);
-
+    
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [days, setDays] = useState<number>(7);
-
-    const loadData = async (isRefresh = false) => {
-        if (isRefresh) setRefreshing(true);
-        setError(null);
-        try {
-            const results = await Promise.allSettled([
-                fetchPredictiveSummary(),
-                fetchPredictiveTrends(days),
-                fetchPredictiveWards(),
-                fetchPredictiveWarnings(),
-                fetchPredictiveRecommendations()
-            ]);
-
-            if (results[0].status === 'fulfilled') setSummary(results[0].value);
-            if (results[1].status === 'fulfilled') setTrendData(results[1].value);
-            if (results[2].status === 'fulfilled') setWards(results[2].value);
-            if (results[3].status === 'fulfilled') setWarnings(results[3].value);
-            if (results[4].status === 'fulfilled') setRecommendations(results[4].value);
-
-        } catch (err) {
-            setError('Unable to load predictive operations data.');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    };
 
     useEffect(() => {
+        const loadData = async () => {
+            setLoading(true);
+            try {
+                const [sum, trnd, wrds, warn, rec] = await Promise.all([
+                    fetchPredictiveSummary(),
+                    fetchPredictiveTrends(7).catch(() => null),
+                    fetchPredictiveWards().catch(() => []),
+                    fetchPredictiveWarnings().catch(() => []),
+                    fetchPredictiveRecommendations().catch(() => [])
+                ]);
+
+                setSummary(sum);
+                setTrends(trnd);
+                setWards(wrds || []);
+                setWarnings(warn || []);
+                setRecommendations(rec || []);
+            } catch (err: any) {
+                console.error("Failed to load predictive data:", err);
+                setError(err.message || 'Failed to load predictive data');
+            } finally {
+                setLoading(false);
+            }
+        };
         loadData();
-        const interval = setInterval(() => {
-            loadData(true);
-        }, 30000);
-        return () => clearInterval(interval);
-    }, [days]);
+    }, []);
 
-    const getPressureColor = (score: number) => {
-        if (score >= 80) return 'text-rose-600 bg-rose-100';
-        if (score >= 60) return 'text-orange-600 bg-orange-100';
-        if (score >= 40) return 'text-amber-600 bg-amber-100';
-        return 'text-emerald-600 bg-emerald-100';
-    };
-
-    if (loading && !summary) {
+    if (loading) {
         return (
-            <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-                <div className="text-slate-500 font-medium animate-pulse flex items-center gap-2">
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    Loading predictive models...
+            <div className="space-y-6">
+                <LoadingSkeleton rows={1} className="h-10 w-64 mb-6" />
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                    <LoadingSkeleton rows={1} className="h-32" />
+                    <LoadingSkeleton rows={1} className="h-32" />
+                    <LoadingSkeleton rows={1} className="h-32" />
+                    <LoadingSkeleton rows={1} className="h-32" />
+                    <LoadingSkeleton rows={1} className="h-32" />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <LoadingSkeleton rows={1} className="h-80 lg:col-span-2" />
+                    <LoadingSkeleton rows={1} className="h-80 lg:col-span-1" />
                 </div>
             </div>
         );
     }
 
+    if (error || !summary) {
+        return <EmptyState title="Error Loading Predictions" description={error || "Summary data not available."} />;
+    }
+
+    const chartData = trends ? {
+        labels: trends.labels,
+        datasets: [
+            { label: 'Facility Pressure', data: trends.facility_pressure, borderColor: '#ef4444', backgroundColor: '#ef4444', tension: 0.3 },
+            { label: 'Predicted Occupancy (%)', data: trends.occupancy_prediction, borderColor: '#3b82f6', backgroundColor: '#3b82f6', tension: 0.3 }
+        ]
+    } : null;
+
     return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 p-8">
-            <header className="mb-8 border-b-2 border-slate-200 pb-4 flex justify-between items-end">
+        <div className="space-y-6 animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>
-                    
-            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 flex justify-between items-center rounded shadow-sm">
-                <div>
-                    <p className="text-sm text-blue-700 font-bold">Real-Time Operations</p>
-                    <p className="text-xs text-blue-600">Monitor all hospital metrics in real-time</p>
+                    <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+                        <ActivitySquare className="w-6 h-6 text-primary-600" />
+                        Predictive Intelligence
+                    </h1>
+                    <p className="text-sm text-slate-500 mt-1">AI-driven early warnings and forecasts</p>
                 </div>
-                <Link to="/control-tower" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded text-sm">
-                    Go to Control Tower
-                </Link>
+                <div className="flex items-center gap-2">
+                    <span className="flex h-3 w-3 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-primary-500"></span>
+                    </span>
+                    <span className="text-sm font-semibold text-primary-600">MODELS ACTIVE</span>
+                </div>
             </div>
-<h1 className="text-3xl font-black tracking-tight text-slate-800">Predictive Operations</h1>
-                    <p className="text-slate-500 font-medium tracking-wide text-sm mt-1 uppercase">Early Warning & Analytics</p>
-        {/* Simulation CTA */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
-            <div>
-                <h3 className="text-sm font-medium text-blue-900">Test Scenarios in Simulation Center</h3>
-                <p className="text-sm text-blue-700 mt-1">Run 'what-if' models without affecting live hospital data.</p>
-            </div>
-            <Link to="/simulation" className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
-                Open Simulation
-            </Link>
-        </div>
-
-                </div>
-                <div className="flex gap-4 items-center">
-                    <Link to="/" className="text-sm font-bold bg-slate-200 text-slate-700 hover:bg-slate-300 px-4 py-2 rounded transition-colors">
-                        &larr; Dashboard
-                    </Link>
-                    <button 
-                        onClick={() => loadData(true)} 
-                        disabled={refreshing}
-                        className="flex items-center gap-2 text-sm font-bold bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2 rounded transition-colors disabled:opacity-50"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} /> 
-                        {refreshing ? 'Refreshing...' : 'Manual Refresh'}
-                    </button>
-                </div>
-            </header>
-
-      {/* WORKLOAD CTA */}
-      <div className="mb-6 bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center">
-          <span className="text-2xl mr-4">⚖️</span>
-          <div>
-            <h3 className="text-md font-bold text-emerald-900">Intelligent Workload Prioritization</h3>
-            <p className="text-sm text-emerald-700">View priority boards, manage queues, and balance staff workload.</p>
-          </div>
-        </div>
-        <Link to="/workload" className="px-4 py-2 bg-white text-emerald-700 text-sm font-bold border border-emerald-300 rounded shadow-sm hover:bg-emerald-100 transition-colors">
-          View Workload
-        </Link>
-      </div>
-
-
-      {/* SIMULATION CTA */}
-      <div className="mb-8 bg-orange-50 border border-orange-200 rounded-lg p-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center">
-          <span className="text-2xl mr-4">🧪</span>
-          <div>
-            <h3 className="text-md font-bold text-orange-900">Operational Simulation</h3>
-            <p className="text-sm text-orange-700">Model scenarios and test operational changes before implementing them.</p>
-          </div>
-        </div>
-        <Link to="/simulation" className="px-4 py-2 bg-white text-orange-700 text-sm font-bold border border-orange-300 rounded shadow-sm hover:bg-orange-100 transition-colors">
-          Try Simulation Center
-        </Link>
-      </div>
-
-            {error && (
-                <div className="bg-rose-100 border border-rose-400 text-rose-700 px-4 py-3 rounded mb-6">
-                    {error}
-                </div>
-            )}
 
             {/* KPI Strip */}
-            <section className="mb-8">
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col items-center">
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-2">Early-Warning Score</span>
-                        <span className={`text-4xl font-black px-4 py-2 rounded-lg ${summary ? getPressureColor(summary.early_warning_score) : 'text-slate-400'}`}>
-                            {summary?.early_warning_score || '-'}
-                        </span>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Capacity Pressure</span>
-                        <span className="text-2xl font-black text-slate-800 mt-2">{summary?.capacity_pressure || '-'}%</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">SLA Pressure</span>
-                        <span className="text-2xl font-black text-slate-800 mt-2">{summary?.sla_pressure || '-'}%</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Cleaning Pressure</span>
-                        <span className="text-2xl font-black text-slate-800 mt-2">{summary?.cleaning_pressure || '-'}%</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                        <span className="text-slate-500 text-xs font-bold uppercase tracking-wider">Workflow Pressure</span>
-                        <span className="text-2xl font-black text-slate-800 mt-2">{summary?.workflow_pressure || '-'}%</span>
-                    </div>
-                </div>
-            </section>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <Card className="bg-slate-900 text-white border-0">
+                    <CardContent className="p-4">
+                        <h3 className="text-2xl font-bold mb-1">{summary.early_warning_score}</h3>
+                        <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">Early Warning</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <h3 className={`text-2xl font-bold mb-1 ${summary.capacity_pressure > 80 ? 'text-danger-600' : 'text-slate-900'}`}>{summary.capacity_pressure}</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Capacity Pres</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <h3 className={`text-2xl font-bold mb-1 ${summary.sla_pressure > 80 ? 'text-warning-600' : 'text-slate-900'}`}>{summary.sla_pressure}</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">SLA Pres</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <h3 className={`text-2xl font-bold mb-1 ${summary.cleaning_pressure > 80 ? 'text-info-600' : 'text-slate-900'}`}>{summary.cleaning_pressure}</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Cleaning Pres</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <h3 className={`text-2xl font-bold mb-1 ${summary.workflow_pressure > 80 ? 'text-danger-600' : 'text-slate-900'}`}>{summary.workflow_pressure}</h3>
+                        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Workflow Pres</p>
+                    </CardContent>
+                </Card>
+            </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-                {/* Trend Chart */}
-                <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                    <div className="flex justify-between items-center mb-6">
-                        <h2 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                            <ActivitySquare className="w-5 h-5 text-indigo-500" /> Operational Pressure Trend
-                        </h2>
-                        <select 
-                            value={days} 
-                            onChange={(e) => setDays(Number(e.target.value))}
-                            className="border-slate-300 rounded-md shadow-sm text-sm"
-                        >
-                            <option value={7}>7 Days</option>
-                            <option value={14}>14 Days</option>
-                            <option value={30}>30 Days</option>
-                            <option value={90}>90 Days</option>
-                        </select>
-                    </div>
-                    <div className="h-64">
-                        {trendData ? (
-                            <Line 
-                                data={{
-                                    labels: trendData.labels,
-                                    datasets: [
-                                        {
-                                            label: 'Facility Pressure',
-                                            data: trendData.facility_pressure,
-                                            borderColor: 'rgb(244, 63, 94)', // rose-500
-                                            backgroundColor: 'rgba(244, 63, 94, 0.5)',
-                                            tension: 0.3
-                                        },
-                                        {
-                                            label: 'Predicted Occupancy',
-                                            data: trendData.occupancy_prediction,
-                                            borderColor: 'rgb(59, 130, 246)', // blue-500
-                                            backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                                            tension: 0.3
-                                        }
-                                    ]
-                                }} 
-                                options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                        y: {
-                                            beginAtZero: true,
-                                            max: 100
-                                        }
-                                    }
-                                }} 
-                            />
+            {/* Main Dashboard */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* 7-Day Forecast */}
+                <Card className="lg:col-span-2">
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-primary-500" />
+                            7-Day Pressure Forecast
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-6">
+                        {chartData ? (
+                            <div className="h-[250px] w-full">
+                                <Line 
+                                    options={{ 
+                                        responsive: true, 
+                                        maintainAspectRatio: false, 
+                                        interaction: { mode: 'index', intersect: false } 
+                                    }}
+                                    data={chartData}
+                                />
+                            </div>
                         ) : (
-                            <div className="h-full flex items-center justify-center text-slate-500">
-                                No trend data available
-                            </div>
+                            <div className="p-8 text-center text-slate-500 text-sm">Forecast models are currently building data.</div>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
 
-                {/* Active Warnings */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h2 className="text-lg font-bold text-slate-700 mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <AlertTriangle className="w-5 h-5 text-rose-500" /> Active Warnings
-                    </h2>
-                    <div className="space-y-4">
-                        {warnings.length > 0 ? warnings.map(w => (
-                            <div key={w.id} className={`p-3 rounded-lg border-l-4 ${w.severity === 'CRITICAL' ? 'bg-rose-50 border-rose-500' : 'bg-orange-50 border-orange-400'}`}>
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-slate-800 text-sm">{w.type}</span>
-                                    <span className="text-xs font-mono text-slate-500">{w.timeframe}</span>
-                                </div>
-                                <div className="text-sm text-slate-600 mb-1">{w.message}</div>
+                {/* AI Recommendations */}
+                <Card>
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Zap className="w-5 h-5 text-warning-500" />
+                            AI Prescriptions
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {recommendations.length > 0 ? (
+                            <div className="divide-y divide-slate-100">
+                                {recommendations.map((rec, i) => (
+                                    <div key={i} className="p-4 hover:bg-slate-50 transition-colors">
+                                        <div className="flex items-center justify-between mb-2">
+                                            <span className="font-semibold text-slate-800 text-sm">{rec.action}</span>
+                                            <StatusBadge status={rec.priority} />
+                                        </div>
+                                        <p className="text-xs text-slate-500">{rec.impact}</p>
+                                    </div>
+                                ))}
                             </div>
-                        )) : (
-                            <p className="text-slate-500 text-center py-4">No active warnings.</p>
+                        ) : (
+                            <div className="p-8 text-center text-slate-500 text-sm">No critical actions recommended at this time.</div>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-                {/* Ward Early-Warning Grid */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-slate-200">
-                        <h2 className="text-lg font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                            <AlertCircle className="w-5 h-5 text-amber-500" /> Ward Early-Warning Grid
-                        </h2>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                                    <th className="p-4 font-semibold">Ward</th>
-                                    <th className="p-4 font-semibold">Warning Score</th>
-                                    <th className="p-4 font-semibold">Pressure</th>
-                                    <th className="p-4 font-semibold">Predicted Occ.</th>
-                                    <th className="p-4 font-semibold">Blockers</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 text-sm">
-                                {wards.length > 0 ? wards.map(w => (
-                                    <tr key={w.ward_id} className="hover:bg-slate-50">
-                                        <td className="p-4 font-medium text-slate-800">{w.ward_name}</td>
-                                        <td className="p-4">
-                                            <span className={`px-2 py-1 rounded text-xs font-bold ${getPressureColor(w.warning_score)}`}>
-                                                {w.warning_score}
+            {/* Bottom Grid: Warnings and Wards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Predictive Warnings */}
+                <Card>
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <AlertCircle className="w-5 h-5 text-danger-500" />
+                            Predicted Bottlenecks
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {warnings.length > 0 ? (
+                            <div className="divide-y divide-slate-100">
+                                {warnings.map((warn, i) => (
+                                    <div key={i} className="p-4 flex flex-col md:flex-row md:items-center justify-between hover:bg-slate-50 transition-colors">
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-slate-800 text-sm">{warn.type}</span>
+                                            <span className="text-xs text-slate-600 mt-1">{warn.message}</span>
+                                        </div>
+                                        <div className="flex flex-col items-end mt-2 md:mt-0">
+                                            <span className="text-xs font-bold text-slate-500 mb-1">{warn.timeframe}</span>
+                                            <StatusBadge status={warn.severity} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-8 text-center text-slate-500 text-sm">No bottlenecks predicted in the next 24 hours.</div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Ward Early Warnings */}
+                <Card>
+                    <CardHeader className="border-b border-slate-100 pb-4">
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Target className="w-5 h-5 text-primary-500" />
+                            Ward Early Warnings
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        {wards.length > 0 ? (
+                            <div className="divide-y divide-slate-100">
+                                {wards.map((ward, i) => (
+                                    <div key={i} className="p-4 flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="font-semibold text-slate-800 text-sm">{ward.ward_name}</span>
+                                            <span className="text-xs text-slate-500 mt-1">
+                                                Predicted Occupancy: {ward.predicted_occupancy}%
                                             </span>
-                                        </td>
-                                        <td className="p-4">
-                                            <span className={`text-xs font-bold uppercase ${w.pressure_level === 'CRITICAL' ? 'text-rose-600' : w.pressure_level === 'HIGH' ? 'text-orange-600' : 'text-slate-600'}`}>
-                                                {w.pressure_level}
-                                            </span>
-                                        </td>
-                                        <td className="p-4 text-slate-600">{w.predicted_occupancy}%</td>
-                                        <td className="p-4 text-slate-600 font-medium">{w.critical_blockers}</td>
-                                    </tr>
-                                )) : (
-                                    <tr>
-                                        <td colSpan={5} className="p-6 text-center text-slate-500">No ward data available.</td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                {/* Recommendations */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <h2 className="text-lg font-bold text-slate-700 mb-4 uppercase tracking-wider flex items-center gap-2">
-                        <CheckCircle2 className="w-5 h-5 text-emerald-500" /> Operational Recommendations
-                    </h2>
-                    <div className="space-y-4">
-                        {recommendations.length > 0 ? recommendations.map(rec => (
-                            <div key={rec.id} className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className="font-bold text-slate-800">{rec.action}</span>
-                                    <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${rec.priority === 'HIGH' ? 'bg-rose-100 text-rose-700' : 'bg-blue-100 text-blue-700'}`}>
-                                        {rec.priority}
-                                    </span>
-                                </div>
-                                <div className="text-sm text-slate-600">Impact: <span className="font-medium text-slate-800">{rec.impact}</span></div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {ward.critical_blockers > 0 && (
+                                                <span className="text-xs font-bold text-danger-600 flex items-center gap-1">
+                                                    <AlertTriangle className="w-3 h-3" /> {ward.critical_blockers} Blk
+                                                </span>
+                                            )}
+                                            <StatusBadge status={ward.pressure_level} />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                        )) : (
-                            <p className="text-slate-500 text-center py-4">No recommendations at this time.</p>
+                        ) : (
+                            <div className="p-8 text-center text-slate-500 text-sm">All wards operating within normal parameters.</div>
                         )}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
-        
-            {/* BENCHMARKING CTA */}
-            <div className="bg-teal-50 rounded-xl shadow-sm border border-teal-100 p-4 flex flex-col justify-center items-center text-center mt-4 mb-4">
-                <h3 className="font-bold text-teal-900 mb-2">Facility Benchmarking</h3>
-                <p className="text-sm text-teal-700 mb-4">Compare operational performance against standards.</p>
-                <Link to="/benchmarking" className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-teal-700 w-full transition-colors shadow-sm">View Benchmarks</Link>
-            </div>
-
-</div>
+            
+        </div>
     );
-};
-
-export default PredictiveOperations;
+}
