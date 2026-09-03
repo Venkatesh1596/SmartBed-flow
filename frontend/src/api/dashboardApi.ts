@@ -755,19 +755,10 @@ export async function fetchExecutivePriorities(days?: number): Promise<Executive
 
 // --- Admin API ---
 
-export interface AdminSummary {
-    total_users: number;
-    active_users: number;
-    system_status: string;
-    last_backup: string;
-}
-
 export interface SystemHealth {
     status: string;
-    cpu_usage: number;
-    memory_usage: number;
-    database_connected: boolean;
-    uptime: string;
+    db_connection: boolean;
+    services_ok: boolean;
 }
 
 export interface AdminConfiguration {
@@ -785,22 +776,6 @@ export interface AdminUser {
     last_login: string;
 }
 
-export async function fetchAdminSummary(): Promise<AdminSummary> {
-    try {
-        const response = await fetch(`${API_BASE}/admin/summary`, { headers: getAuthHeaders() });
-        if (response.ok) {
-            return handleResponse(response);
-        }
-    } catch (e) {
-        // Fallback for missing backend endpoint
-    }
-    return {
-        total_users: 15,
-        active_users: 12,
-        system_status: "Healthy",
-        last_backup: new Date().toISOString()
-    };
-}
 
 export async function fetchSystemHealth(): Promise<SystemHealth> {
     const response = await fetch(`${API_BASE}/admin/health`, { headers: getAuthHeaders() });

@@ -1,24 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    fetchAdminSummary,
     fetchSystemHealth,
     fetchAdminConfiguration,
     fetchAdminUsers,
     updateAdminUserStatus,
     updateAdminUserRole,
-    type AdminSummary,
     type SystemHealth,
     type AdminConfiguration,
     type AdminUser
 } from '../api/dashboardApi';
 
 export default function AdminDashboard() {
-    const [summary, setSummary] = useState<AdminSummary | null>(null);
-    const [health, setHealth] = useState<SystemHealth | null>(null);
+        const [health, setHealth] = useState<SystemHealth | null>(null);
     const [config, setConfig] = useState<AdminConfiguration[]>([]);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         loadData();
@@ -27,18 +25,17 @@ export default function AdminDashboard() {
     const loadData = async () => {
         setLoading(true);
         try {
-            const [sumData, healthData, configData, usersData] = await Promise.all([
-                fetchAdminSummary(),
+            const [healthData, configData, usersData] = await Promise.all([
                 fetchSystemHealth(),
                 fetchAdminConfiguration(),
                 fetchAdminUsers()
             ]);
-            setSummary(sumData);
             setHealth(healthData);
             setConfig(configData);
             setUsers(usersData);
-        } catch (error) {
+        } catch (error: any) {
             console.error("Failed to load admin data", error);
+            setError(error.message || "Failed to load admin dashboard data.");
         }
         setLoading(false);
     };
@@ -62,7 +59,19 @@ export default function AdminDashboard() {
     };
 
     if (loading) {
-        return <div className="p-6">Loading admin dashboard...</div>;
+        return <div className="p-6 flex items-center justify-center"><div className="animate-pulse text-slate-500">Loading admin dashboard...</div></div>;
+    }
+
+    if (error) {
+        return (
+            <div className="p-6">
+                <div className="bg-red-50 text-red-600 p-4 rounded-lg border border-red-200">
+                    <h3 className="font-bold">Error Loading Admin Dashboard</h3>
+                    <p>{error}</p>
+                    <button onClick={loadData} className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Retry</button>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -86,23 +95,20 @@ export default function AdminDashboard() {
             </div>
 
             {/* System Health Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
                     <h3 className="text-sm font-medium text-slate-500">System Status</h3>
                     <p className={`text-2xl font-bold ${health?.status === 'Healthy' ? 'text-green-600' : 'text-red-600'}`}>{health?.status}</p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
-                    <h3 className="text-sm font-medium text-slate-500">CPU Usage</h3>
-                    <p className="text-2xl font-bold text-slate-900">{health?.cpu_usage}%</p>
+                    <h3 className="text-sm font-medium text-slate-500">DB Connection</h3>
+                    <p className={`text-2xl font-bold ${health?.db_connection ? \'text-green-600\' : \'text-red-600\'}`}>{health?.db_connection ? \'Connected\' : \'Disconnected\'}</p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
-                    <h3 className="text-sm font-medium text-slate-500">Memory Usage</h3>
-                    <p className="text-2xl font-bold text-slate-900">{health?.memory_usage}%</p>
+                    <h3 className="text-sm font-medium text-slate-500">Services Status</h3>
+                    <p className={`text-2xl font-bold ${health?.services_ok ? \'text-green-600\' : \'text-red-600\'}`}>{health?.services_ok ? \'OK\' : \'Degraded\'}</p>
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
-                    <h3 className="text-sm font-medium text-slate-500">Uptime</h3>
-                    <p className="text-2xl font-bold text-slate-900">{health?.uptime}</p>
-                </div>
+                
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -110,7 +116,7 @@ export default function AdminDashboard() {
                 <div className="bg-white rounded-lg shadow border border-slate-200 overflow-hidden">
                     <div className="px-4 py-5 border-b border-slate-200">
                         <h3 className="text-lg font-medium leading-6 text-slate-900">User Administration</h3>
-                        <p className="mt-1 text-sm text-slate-500">Total: {summary?.total_users} | Active: {summary?.active_users}</p>
+                        <p className="mt-1 text-sm text-slate-500">Total: {users.length} | Active: {users.filter(u => u.is_active).length}</p>
                     </div>
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-slate-200">
@@ -188,7 +194,7 @@ export default function AdminDashboard() {
                             <h3 className="text-lg font-medium leading-6 text-slate-900">Recent Admin Activity</h3>
                         </div>
                         <div className="p-4 text-sm text-slate-500">
-                            <p>Last Backup: {summary?.last_backup || 'N/A'}</p>
+                            <p>Last Backup: N/A</p>
                             <p className="mt-2">Activity log viewer placeholder...</p>
                         </div>
                     </div>
