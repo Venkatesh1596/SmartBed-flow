@@ -85,11 +85,11 @@ const ExecutiveDashboard = () => {
   }, [days]);
 
   const trendChartData = {
-    labels: trends.map(t => t.date),
+    labels: (trends || []).map(t => t.date),
     datasets: [
       {
         label: 'Occupancy Rate (%)',
-        data: trends.map(t => t.occupancy_rate || 0),
+        data: (trends || []).map(t => t.occupancy_rate || 0),
         borderColor: 'rgba(59, 130, 246, 1)',
         backgroundColor: 'rgba(59, 130, 246, 0.5)',
         tension: 0.3,
@@ -99,16 +99,16 @@ const ExecutiveDashboard = () => {
   };
 
   const flowChartData = {
-    labels: trends.map(t => t.date),
+    labels: (trends || []).map(t => t.date),
     datasets: [
       {
         label: 'Admissions',
-        data: trends.map(t => t.admissions || 0),
+        data: (trends || []).map(t => t.admissions || 0),
         backgroundColor: 'rgba(16, 185, 129, 0.7)',
       },
       {
         label: 'Discharges',
-        data: trends.map(t => t.discharges || 0),
+        data: (trends || []).map(t => t.discharges || 0),
         backgroundColor: 'rgba(99, 102, 241, 0.7)',
       }
     ]
@@ -283,7 +283,7 @@ const ExecutiveDashboard = () => {
             <h2 className="text-lg font-bold text-slate-900">Performance Index</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {performance.map((p, idx) => (
+            {(performance || []).map((p, idx) => (
               <div key={idx} className="p-4 flex items-center justify-between">
                 <div>
                   <div className="font-medium text-slate-900">{p.kpi}</div>
@@ -312,7 +312,7 @@ const ExecutiveDashboard = () => {
             <h2 className="text-lg font-bold text-slate-900">Operational Attention</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {attention.map((att, idx) => (
+            {(attention || []).map((att, idx) => (
               <div key={idx} className="p-4 flex gap-3">
                 <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
                 <div>
@@ -334,7 +334,7 @@ const ExecutiveDashboard = () => {
             <h2 className="text-lg font-bold text-slate-900">Strategic Priorities</h2>
           </div>
           <div className="divide-y divide-slate-100">
-            {priorities.map((prio, idx) => (
+            {(priorities || []).map((prio, idx) => (
               <div key={idx} className="p-4">
                 <div className="flex items-start justify-between">
                   <div className="font-medium text-slate-900">{prio.priority}</div>
@@ -371,7 +371,7 @@ const ExecutiveDashboard = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {wards.map((ward, idx) => (
+              {(wards || []).map((ward, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50">
                   <td className="px-6 py-3 font-medium text-slate-900">{ward.ward_name}</td>
                   <td className="px-6 py-3 text-right text-slate-600">{ward.occupancy_rate.toFixed(1)}%</td>

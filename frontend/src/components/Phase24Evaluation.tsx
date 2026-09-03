@@ -60,7 +60,7 @@ const Phase24Evaluation: React.FC = () => {
 
     if (loading) return <div className="p-6">Loading Phase 24 Evaluation...</div>;
     if (error) return <div className="p-6 text-red-500">{error}</div>;
-    if (!data) return null;
+    if (!data) return <div className="p-6">No evaluation data available.</div>;
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">

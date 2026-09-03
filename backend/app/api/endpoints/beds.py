@@ -11,7 +11,7 @@ from app.models.event import BedStateEvent
 
 router = APIRouter()
 
-@router.get("/", response_model=List[BedResponse])
+@router.get("", response_model=List[BedResponse])
 def get_beds(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(Bed).all()
 
@@ -27,7 +27,7 @@ def get_bed_history(bed_id: int, db: Session = Depends(get_db), current_user: Us
     events = db.query(BedStateEvent).filter(BedStateEvent.bed_id == bed_id).order_by(BedStateEvent.timestamp.desc()).all()
     return events
 
-@router.post("/", response_model=BedResponse, dependencies=[Depends(RoleChecker(["ADMIN"]))])
+@router.post("", response_model=BedResponse, dependencies=[Depends(RoleChecker(["ADMIN"]))])
 def create_bed(bed_in: BedCreate, db: Session = Depends(get_db)):
     ward = db.query(Ward).filter(Ward.id == bed_in.ward_id).first()
     if not ward:

@@ -11,11 +11,11 @@ from app.models.event import HospitalEvent
 
 router = APIRouter()
 
-@router.get("/", response_model=List[HospitalEventResponse])
+@router.get("", response_model=List[HospitalEventResponse])
 def get_events(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     return db.query(HospitalEvent).order_by(HospitalEvent.timestamp.desc()).limit(100).all()
 
-@router.post("/", response_model=HospitalEventResponse)
+@router.post("", response_model=HospitalEventResponse)
 def create_event(event_in: HospitalEventCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     # Basic synthetic event processor
     # For bed state changes we invoke the bed state machine service
