@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { RefreshCw, BarChart2, TrendingUp, AlertTriangle, Zap, Target, Compass } from 'lucide-react';
 import {

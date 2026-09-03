@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -37,7 +37,7 @@ ChartJS.register(
   Legend
 );
 
-const Reports: React.FC = () => {
+const Reports = () => {
   const [dateRange, setDateRange] = useState<string>('7'); // '7', '14', '30', 'custom'
   const [startDate, setStartDate] = useState<string>('');
   const [endDate, setEndDate] = useState<string>('');
