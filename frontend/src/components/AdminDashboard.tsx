@@ -102,11 +102,11 @@ export default function AdminDashboard() {
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
                     <h3 className="text-sm font-medium text-slate-500">DB Connection</h3>
-                    <p className={`text-2xl font-bold ${health?.db_connection ? \'text-green-600\' : \'text-red-600\'}`}>{health?.db_connection ? \'Connected\' : \'Disconnected\'}</p>
+                    <p className={`text-2xl font-bold ${health?.db_connection ? 'text-green-600' : 'text-red-600'}`}>{health?.db_connection ? 'Connected' : 'Disconnected'}</p>
                 </div>
                 <div className="bg-white p-4 rounded-lg shadow border border-slate-200">
                     <h3 className="text-sm font-medium text-slate-500">Services Status</h3>
-                    <p className={`text-2xl font-bold ${health?.services_ok ? \'text-green-600\' : \'text-red-600\'}`}>{health?.services_ok ? \'OK\' : \'Degraded\'}</p>
+                    <p className={`text-2xl font-bold ${health?.services_ok ? 'text-green-600' : 'text-red-600'}`}>{health?.services_ok ? 'OK' : 'Degraded'}</p>
                 </div>
                 
             </div>
