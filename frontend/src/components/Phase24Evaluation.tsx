@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Target, CheckCircle2, TrendingUp, Clock, FileText } from 'lucide-react';
+import { Target, TrendingUp, Clock, FileText, AlertTriangle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent, StatusBadge, EmptyState, LoadingSkeleton } from './ui';
 import { fetchPhase24Validation } from '../api/dashboardApi';
 import type { Phase24ValidationResult } from '../api/dashboardApi';
@@ -7,6 +7,7 @@ import type { Phase24ValidationResult } from '../api/dashboardApi';
 export default function Phase24Evaluation() {
     const [data, setData] = useState<Phase24ValidationResult | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadData = async () => {
@@ -14,31 +15,7 @@ export default function Phase24Evaluation() {
                 const result = await fetchPhase24Validation();
                 setData(result);
             } catch (err: any) {
-                // Fallback mock data
-                setData({
-                    problem_statement: "Hospitals lack real-time visibility into bed readiness, leading to delays in patient admission and suboptimal capacity utilization.",
-                    kpi: {
-                        metric: "Readiness -> Next Safe Bed",
-                        baseline: "45 mins",
-                        target: "< 20 mins",
-                        smartbed_flow_result: "18 mins",
-                        improvement: "60%"
-                    },
-                    journeys: {
-                        routine: {
-                            name: "Routine Admission",
-                            timeline: ["Patient admitted to ER", "Bed requested", "Bed marked ready", "Patient transported", "Patient in bed"]
-                        },
-                        urgent: {
-                            name: "ICU Stepdown",
-                            timeline: ["ICU transfer requested", "Priority bed assigned", "Rapid cleaning triggered", "Bed ready", "Patient transferred"]
-                        }
-                    },
-                    edge_cases: [],
-                    human_review_points: [],
-                    failure_cases: [],
-                    error_analysis: ""
-                });
+                setError(err.message || 'Failed to load evaluation data');
             } finally {
                 setLoading(false);
             }
@@ -59,8 +36,8 @@ export default function Phase24Evaluation() {
         );
     }
 
-    if (!data) {
-        return <EmptyState title="Evaluation Data Unavailable" description="Could not load phase 24 validation metrics." />;
+    if (error || !data) {
+        return <EmptyState title="Evaluation Data Unavailable" description={error || "Could not load phase 24 validation metrics."} />;
     }
 
     return (
@@ -70,108 +47,63 @@ export default function Phase24Evaluation() {
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
                         <FileText className="w-6 h-6 text-primary-600" />
-                        MVP Evaluation (Phase 24)
+                        System Evaluation Metrics
                     </h1>
-                    <p className="text-sm text-slate-500 mt-1">Validation metrics and outcome tracking</p>
+                    <p className="text-sm text-slate-500 mt-1">Real-time performance and validation outcomes</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <StatusBadge status={'ON_TRACK'} />
+                    <StatusBadge status={data.conflict_bed_state_count > 0 ? 'WARNING' : 'ON_TRACK'} />
                 </div>
             </div>
-
-            {/* Problem Statement */}
-            <Card className="bg-slate-50 border-slate-200">
-                <CardContent className="p-6">
-                    <h3 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center gap-2">
-                        <Target className="w-4 h-4" /> The Problem
-                    </h3>
-                    <p className="text-slate-800 font-medium leading-relaxed">
-                        "{data.problem_statement}"
-                    </p>
-                </CardContent>
-            </Card>
 
             {/* KPI Results */}
             <Card>
                 <CardHeader className="border-b border-slate-100 pb-4">
                     <CardTitle className="text-lg flex items-center gap-2">
                         <TrendingUp className="w-5 h-5 text-primary-500" />
-                        Core KPI: {data.kpi.metric}
+                        Operational Impact
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    <div className="grid grid-cols-1 md:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100">
                         <div className="p-6 flex flex-col items-center justify-center text-center">
-                            <span className="text-sm font-semibold text-slate-500 mb-1">Baseline</span>
-                            <span className="text-3xl font-bold text-slate-700">{data.kpi.baseline}</span>
-                        </div>
-                        <div className="p-6 flex flex-col items-center justify-center text-center">
-                            <span className="text-sm font-semibold text-slate-500 mb-1">Target</span>
-                            <span className="text-3xl font-bold text-primary-600">{data.kpi.target}</span>
+                            <span className="text-sm font-semibold text-slate-500 mb-1">Total Simulated Journeys</span>
+                            <span className="text-3xl font-bold text-slate-700">{data.total_journeys}</span>
                         </div>
                         <div className="p-6 flex flex-col items-center justify-center text-center bg-success-50">
-                            <span className="text-sm font-semibold text-success-700 mb-1">SmartBed Flow</span>
-                            <span className="text-3xl font-bold text-success-600">{data.kpi.smartbed_flow_result}</span>
-                        </div>
-                        <div className="p-6 flex flex-col items-center justify-center text-center">
-                            <span className="text-sm font-semibold text-slate-500 mb-1">Improvement</span>
-                            <span className="text-3xl font-bold text-slate-800 flex items-center gap-1">
-                                <TrendingUp className="w-6 h-6 text-success-500" /> {data.kpi.improvement}
+                            <span className="text-sm font-semibold text-success-700 mb-1">Avg Improvement</span>
+                            <span className="text-3xl font-bold text-success-600 flex items-center gap-1">
+                                <TrendingUp className="w-6 h-6 text-success-500" /> {data.average_improvement_percentage ? `${data.average_improvement_percentage.toFixed(1)}%` : 'N/A'}
                             </span>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* Journeys */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Diagnostics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <Card>
-                    <CardHeader className="border-b border-slate-100 pb-4">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-info-500" />
-                            {data.journeys.routine.name}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
-                            {data.journeys.routine.timeline.map((step, index) => (
-                                <div key={index} className="relative pl-6">
-                                    <div className="absolute w-4 h-4 bg-white border-2 border-primary-500 rounded-full -left-[9px] top-1"></div>
-                                    <p className="font-medium text-sm text-slate-700">{step}</p>
-                                </div>
-                            ))}
-                            <div className="relative pl-6">
-                                <div className="absolute w-4 h-4 bg-success-500 border-2 border-white rounded-full -left-[9px] top-1 shadow"></div>
-                                <p className="font-bold text-sm text-success-700 flex items-center gap-1">
-                                    <CheckCircle2 className="w-4 h-4" /> Completed Routine
-                                </p>
-                            </div>
-                        </div>
+                    <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                        <AlertTriangle className={`w-8 h-8 ${data.missing_readiness_count > 0 ? 'text-amber-500' : 'text-slate-300'}`} />
+                        <h3 className="font-bold text-slate-700">Missing Readiness</h3>
+                        <p className="text-2xl font-black text-slate-900">{data.missing_readiness_count}</p>
+                        <p className="text-xs text-slate-500">Unresolved readiness alerts</p>
                     </CardContent>
                 </Card>
-
                 <Card>
-                    <CardHeader className="border-b border-slate-100 pb-4">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-warning-500" />
-                            {data.journeys.urgent.name}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                        <div className="relative border-l-2 border-slate-200 ml-3 space-y-6">
-                            {data.journeys.urgent.timeline.map((step, index) => (
-                                <div key={index} className="relative pl-6">
-                                    <div className="absolute w-4 h-4 bg-white border-2 border-warning-500 rounded-full -left-[9px] top-1"></div>
-                                    <p className="font-medium text-sm text-slate-700">{step}</p>
-                                </div>
-                            ))}
-                            <div className="relative pl-6">
-                                <div className="absolute w-4 h-4 bg-success-500 border-2 border-white rounded-full -left-[9px] top-1 shadow"></div>
-                                <p className="font-bold text-sm text-success-700 flex items-center gap-1">
-                                    <CheckCircle2 className="w-4 h-4" /> Completed Urgent
-                                </p>
-                            </div>
-                        </div>
+                    <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                        <Clock className={`w-8 h-8 ${data.stale_cleaning_count > 0 ? 'text-amber-500' : 'text-slate-300'}`} />
+                        <h3 className="font-bold text-slate-700">Stale Cleaning</h3>
+                        <p className="text-2xl font-black text-slate-900">{data.stale_cleaning_count}</p>
+                        <p className="text-xs text-slate-500">Delayed cleaning tasks</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="pt-6 flex flex-col items-center text-center space-y-2">
+                        <Target className={`w-8 h-8 ${data.conflict_bed_state_count > 0 ? 'text-rose-500' : 'text-slate-300'}`} />
+                        <h3 className="font-bold text-slate-700">State Conflicts</h3>
+                        <p className="text-2xl font-black text-slate-900">{data.conflict_bed_state_count}</p>
+                        <p className="text-xs text-slate-500">Data mismatch errors</p>
                     </CardContent>
                 </Card>
             </div>

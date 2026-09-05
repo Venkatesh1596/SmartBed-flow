@@ -6,3 +6,5 @@ from .event import HospitalEvent, ClinicalEvent, DischargeEvent, CleaningEvent, 
 from .review import HumanReview
 from .audit_log import AuditLog
 from .notification import Notification
+from .core_models import Facility, Equipment, Incident
+from .transport import TransportRequest

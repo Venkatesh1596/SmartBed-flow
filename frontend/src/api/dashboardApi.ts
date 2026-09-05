@@ -194,10 +194,16 @@ export async function fetchOccupancyTrend(days: number = 7): Promise<OccupancyTr
 }
 
 export async function fetchFlowAnalytics(days: number = 7): Promise<FlowAnalyticsData> {
-    const response = await fetch(`${API_BASE}/dashboard/flow-analytics?days=${days}`, {
+    const response = await fetch(`${API_BASE}/dashboard/flow?days=${days}`, {
         headers: getAuthHeaders()
     });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    const items = Array.isArray(data) ? data : [];
+    return {
+        labels: items.map((d: any) => d.date),
+        admissions: items.map((d: any) => d.admissions),
+        discharges: items.map((d: any) => d.discharges)
+    };
 }
 
 export async function fetchTurnoverSummary(): Promise<TurnoverSummary> {
@@ -247,7 +253,7 @@ export async function fetchPredictionSummary(): Promise<PredictionSummary> {
 }
 
 export async function fetchBedAvailabilityPredictions(): Promise<BedAvailabilityPrediction[]> {
-    const response = await fetch(`${API_BASE}/predictions/beds`, {
+    const response = await fetch(`${API_BASE}/predictions/bed-availability`, {
         headers: getAuthHeaders()
     });
     return handleResponse(response);
@@ -393,10 +399,11 @@ export async function fetchOverdueSLAWorkflows(): Promise<SLAWorkflow[]> {
 }
 
 export async function fetchBedSLA(bedId: number): Promise<BedSLA> {
-    const response = await fetch(`${API_BASE}/beds/${bedId}/sla`, {
+    const response = await fetch(`${API_BASE}/sla/bed/${bedId}`, {
         headers: getAuthHeaders()
     });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    return Array.isArray(data) ? data[0] : data;
 }
 
 export interface AppNotification {
@@ -409,7 +416,7 @@ export interface AppNotification {
 }
 
 export async function fetchNotifications(): Promise<AppNotification[]> {
-    const response = await fetch(`${API_BASE}/notifications`, {
+    const response = await fetch(`${API_BASE}/notifications/`, {
         headers: getAuthHeaders()
     });
     const data = await handleResponse(response);
@@ -487,7 +494,7 @@ export interface AuditSummary {
 }
 
 export async function fetchAuditLogs(filters?: AuditLogFilters): Promise<AuditLog[]> {
-    let url = `${API_BASE}/audit/logs`;
+    let url = `${API_BASE}/audit/`;
     if (filters) {
         const params = new URLSearchParams();
         Object.entries(filters).forEach(([key, value]) => {
@@ -890,10 +897,15 @@ export async function fetchAvailableSoonBeds(): Promise<AvailableSoonBed[]> {
 }
 
 export async function fetchCapacityTrends(startDate?: string, endDate?: string): Promise<CapacityTrend[]> {
+    const end = endDate || new Date().toISOString();
+    const startObj = new Date();
+    startObj.setDate(startObj.getDate() - 7);
+    const start = startDate || startObj.toISOString();
+
     const params = new URLSearchParams();
-    if (startDate) params.append('start_date', startDate);
-    if (endDate) params.append('end_date', endDate);
-    const queryString = params.toString() ? `?${params.toString()}` : '';
+    params.append('start_date', start);
+    params.append('end_date', end);
+    const queryString = `?${params.toString()}`;
     const response = await fetch(`${API_BASE}/capacity/trends${queryString}`, { headers: getAuthHeaders() });
     const data = await handleResponse(response);
     return data.map((item: any) => ({
@@ -907,11 +919,19 @@ export async function fetchCapacityTrends(startDate?: string, endDate?: string):
 export async function fetchCapacityPriorities(): Promise<CapacityPriority[]> {
     const response = await fetch(`${API_BASE}/capacity/priorities`, { headers: getAuthHeaders() });
     const data = await handleResponse(response);
-    return data.map((item: any, i: number) => ({
-        id: item.id ?? i,
-        level: item.level ?? 'INFO',
-        message: item.message ?? ''
-    }));
+    if (!data) return [];
+    if (Array.isArray(data)) {
+        return data.map((item: any, i: number) => ({
+            id: item.id ?? i,
+            level: item.level ?? 'INFO',
+            message: item.message ?? ''
+        }));
+    }
+    return [{
+        id: data.id ?? 0,
+        level: data.level ?? 'INFO',
+        message: data.message ?? ''
+    }];
 }
 
 export async function fetchCapacityPressure(): Promise<CapacityPressure> {
@@ -925,6 +945,7 @@ export async function fetchCapacityPressure(): Promise<CapacityPressure> {
 }
 
 // --- Orchestration API ---
+
 
 export interface OrchestrationSummary {
     total_beds: number;
@@ -996,22 +1017,22 @@ export async function fetchOrchestrationSummary(): Promise<OrchestrationSummary>
 }
 
 export async function fetchAllocationCandidates(): Promise<AllocationCandidate[]> {
-    const response = await fetch(`${API_BASE}/orchestration/allocation-candidates`, { headers: getAuthHeaders() });
+    const response = await fetch(`${API_BASE}/orchestration/candidates`, { headers: getAuthHeaders() });
     return handleResponse(response);
 }
 
 export async function fetchWorkflowBlockers(): Promise<WorkflowBlocker[]> {
-    const response = await fetch(`${API_BASE}/orchestration/workflow-blockers`, { headers: getAuthHeaders() });
+    const response = await fetch(`${API_BASE}/orchestration/blockers`, { headers: getAuthHeaders() });
     return handleResponse(response);
 }
 
 export async function fetchWardPressure(): Promise<WardPressure[]> {
-    const response = await fetch(`${API_BASE}/orchestration/ward-pressure`, { headers: getAuthHeaders() });
+    const response = await fetch(`${API_BASE}/orchestration/pressure`, { headers: getAuthHeaders() });
     return handleResponse(response);
 }
 
 export async function fetchOperationalQueue(): Promise<OperationalQueueItem[]> {
-    const response = await fetch(`${API_BASE}/orchestration/operational-queue`, { headers: getAuthHeaders() });
+    const response = await fetch(`${API_BASE}/orchestration/queue`, { headers: getAuthHeaders() });
     return handleResponse(response);
 }
 
@@ -1072,7 +1093,20 @@ export async function fetchPredictiveSummary(): Promise<PredictiveSummary> {
 
 export async function fetchPredictiveTrends(days: number = 7): Promise<PredictiveTrendData> {
     const response = await fetch(`${API_BASE}/predictive-operations/trends?days=${days}`, { headers: getAuthHeaders() });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    
+    if (!Array.isArray(data)) {
+        return { labels: [], facility_pressure: [], occupancy_prediction: [] };
+    }
+
+    return {
+        labels: data.map((d: any) => {
+            try { return new Date(d.timestamp).toLocaleDateString(); }
+            catch { return d.timestamp || ''; }
+        }),
+        facility_pressure: data.map((d: any) => d.score ?? 0),
+        occupancy_prediction: data.map((d: any) => d.score ?? 0) // Backend does not supply this independently
+    };
 }
 
 export async function fetchPredictiveWards(): Promise<WardEarlyWarning[]> {
@@ -1206,35 +1240,38 @@ export interface WorkloadDistribution { [key: string]: any }
 export interface WorkloadTrend { [key: string]: any }
 export interface WorkloadRecommendation { [key: string]: any }
 
-export async function fetchWorkloadKPIs(_days?: number): Promise<any> { return {}; }
-export async function fetchWorkloadPriorities(_days?: number): Promise<any> { return []; }
-export async function fetchWorkloadQueues(_days?: number): Promise<any> { return []; }
-export async function fetchWorkloadDistribution(_days?: number): Promise<any> { return []; }
-export async function fetchWorkloadTrends(_days?: number): Promise<any> { return []; }
-export async function fetchWorkloadRecommendations(_days?: number): Promise<any> { return []; }
+export async function fetchWorkloadKPIs(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/summary`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+export async function fetchWorkloadPriorities(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/priorities`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+export async function fetchWorkloadQueues(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/queues`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+export async function fetchWorkloadDistribution(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/distribution`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+export async function fetchWorkloadTrends(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/trends`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+export async function fetchWorkloadRecommendations(_days?: number): Promise<any> {
+    const response = await fetch(`${API_BASE}/workload/recommendations`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
 
 // --- Phase 24 Validation API ---
 export interface Phase24ValidationResult {
-    problem_statement: string;
-    kpi: {
-        metric: string;
-        baseline: string;
-        target: string;
-        smartbed_flow_result: string;
-        improvement: string;
-    };
-    journeys: {
-        routine: { name: string; timeline: string[] };
-        urgent: { name: string; timeline: string[] };
-    };
-    edge_cases: {
-        type: string;
-        description: string;
-        handling: string;
-    }[];
-    human_review_points: string[];
-    failure_cases: string[];
-    error_analysis: string;
+    total_journeys: number;
+    missing_readiness_count: number;
+    stale_cleaning_count: number;
+    conflict_bed_state_count: number;
+    average_improvement_percentage: number | null;
 }
 
 export async function fetchPhase24Validation(): Promise<Phase24ValidationResult> {

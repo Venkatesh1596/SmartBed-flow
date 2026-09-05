@@ -18,7 +18,7 @@ const AuditTrail: React.FC = () => {
         entity_id: initialEntityId
     });
 
-    const loadLogs = async () => {
+    const loadLogs = React.useCallback(async () => {
         setLoading(true);
         try {
             const data = await fetchAuditLogs(filters);
@@ -28,11 +28,11 @@ const AuditTrail: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters]);
 
     useEffect(() => {
         loadLogs();
-    }, [filters]);
+    }, [loadLogs]);
 
     const handleFilterChange = (key: keyof AuditLogFilters, value: any) => {
         setFilters(prev => ({

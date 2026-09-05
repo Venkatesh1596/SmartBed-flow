@@ -69,7 +69,7 @@ const ExecutiveDashboard = () => {
       setTrends(trnds);
       setAttention(att);
       setPriorities(prios);
-    } catch (err) {
+    } catch {
       setError('Unable to load executive dashboard data.');
     } finally {
       setLoading(false);

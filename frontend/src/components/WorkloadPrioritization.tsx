@@ -76,7 +76,7 @@ const WorkloadPrioritization = () => {
             if (results[4].status === 'fulfilled') setTrends(results[4].value);
             if (results[5].status === 'fulfilled') setRecommendations(results[5].value);
             
-        } catch (err) {
+        } catch {
             setError('Failed to load workload data');
         } finally {
             setLoading(false);

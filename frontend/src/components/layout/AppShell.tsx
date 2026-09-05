@@ -1,6 +1,7 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
@@ -17,7 +18,9 @@ export const AppShell: React.FC<{ children: React.ReactNode }> = ({ children }) 
         
         <main className="flex-1 relative overflow-y-auto focus:outline-none custom-scrollbar">
           <div className="py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-            {children}
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
           </div>
         </main>
       </div>

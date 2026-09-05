@@ -11,16 +11,14 @@ import {
     type AdminUser
 } from '../api/dashboardApi';
 
+import { ProvisioningModals } from './ProvisioningModals';
+
 export default function AdminDashboard() {
-        const [health, setHealth] = useState<SystemHealth | null>(null);
+    const [health, setHealth] = useState<SystemHealth | null>(null);
     const [config, setConfig] = useState<AdminConfiguration[]>([]);
     const [users, setUsers] = useState<AdminUser[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    useEffect(() => {
-        loadData();
-    }, []);
 
     const loadData = async () => {
         setLoading(true);
@@ -48,6 +46,9 @@ export default function AdminDashboard() {
             console.error("Failed to update status", error);
         }
     };
+    useEffect(() => {
+        loadData();
+    }, []);
 
     const handleRoleChange = async (userId: number, newRole: string) => {
         try {
@@ -76,6 +77,7 @@ export default function AdminDashboard() {
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+            <ProvisioningModals onComplete={loadData} />
             <div className="flex justify-between items-center">
                 
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-6 flex justify-between items-center rounded shadow-sm">
@@ -211,3 +213,4 @@ export default function AdminDashboard() {
 </div>
     );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Chart as ChartJS,
@@ -54,7 +54,7 @@ const Reports = () => {
   const [exportingCSV, setExportingCSV] = useState(false);
   const [exportingPDF, setExportingPDF] = useState(false);
 
-  const getFilters = (): ReportFilters => {
+  const getFilters = useCallback((): ReportFilters => {
     if (dateRange === 'custom') {
       return { start_date: startDate, end_date: endDate };
     } else {
@@ -66,9 +66,9 @@ const Reports = () => {
         end_date: end.toISOString().split('T')[0]
       };
     }
-  };
+  }, [dateRange, startDate, endDate]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const filters = getFilters();
@@ -96,13 +96,13 @@ const Reports = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [getFilters]);
 
   useEffect(() => {
     if (dateRange !== 'custom') {
       loadData();
     }
-  }, [dateRange]);
+  }, [dateRange, loadData]);
 
   const handleCustomDateSubmit = (e: React.FormEvent) => {
     e.preventDefault();

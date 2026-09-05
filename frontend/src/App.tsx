@@ -1,7 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
-import Register from './components/Register';
+import { Register } from './components/Register';
 import BedsList from './components/BedsList';
 import EventsList from './components/EventsList';
 import CommandCenter from './components/CommandCenter';

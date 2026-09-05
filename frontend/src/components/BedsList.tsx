@@ -36,7 +36,7 @@ export default function BedsList() {
                     for (const bed of bedsData) {
                         try {
                             slas[bed.id] = await fetchBedSLA(bed.id);
-                        } catch (e) {
+                        } catch {
                             slas[bed.id] = null;
                         }
                     }
@@ -54,10 +54,18 @@ export default function BedsList() {
 
     const filteredBeds = beds.filter(bed => {
         const searchStr = searchTerm.toLowerCase();
+        
+        // Safely extract properties that match the backend Bed contract
+        const bedName = bed.name ? String(bed.name).toLowerCase() : '';
+        const bedState = bed.state ? String(bed.state).toLowerCase() : '';
+        const wardStr = bed.ward_id ? `ward ${bed.ward_id}` : '';
+        const idStr = `bed ${bed.id}`;
+
         return (
-            bed.ward.toLowerCase().includes(searchStr) ||
-            bed.status.toLowerCase().includes(searchStr) ||
-            `Bed ${bed.id}`.toLowerCase().includes(searchStr)
+            bedName.includes(searchStr) ||
+            bedState.includes(searchStr) ||
+            wardStr.includes(searchStr) ||
+            idStr.includes(searchStr)
         );
     });
 
@@ -124,25 +132,27 @@ export default function BedsList() {
                                 <CardHeader className="pb-3 border-b border-slate-100 flex flex-row items-center justify-between bg-slate-50/50 rounded-t-xl">
                                     <CardTitle className="text-lg">
                                         <span className="text-slate-500 text-sm font-medium mr-1">BED</span>
-                                        {bed.id}
+                                        {bed.name || bed.id}
                                     </CardTitle>
-                                    <StatusBadge status={bed.status} />
+                                    <StatusBadge status={bed.state} />
                                 </CardHeader>
                                 <CardContent className="pt-4 space-y-4">
                                     
                                     <div className="flex justify-between items-center text-sm">
                                         <span className="text-slate-500 font-medium">Ward</span>
-                                        <span className="font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">{bed.ward}</span>
+                                        <span className="font-semibold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">
+                                            {bed.ward_id ? `Ward ${bed.ward_id}` : 'Unassigned'}
+                                        </span>
                                     </div>
                                     
-                                    {pred && bed.status === 'OCCUPIED' && (
+                                    {pred && bed.state === 'OCCUPIED' && (
                                         <div className="flex items-center justify-between text-sm bg-indigo-50 text-indigo-700 p-2 rounded-md border border-indigo-100">
                                             <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> Available In</span>
                                             <span className="font-bold">~{pred.estimated_time_to_available}m</span>
                                         </div>
                                     )}
 
-                                    {sla && bed.status !== 'AVAILABLE' && (
+                                    {sla && bed.state !== 'AVAILABLE' && (
                                         <div className="mt-4 pt-3 border-t border-slate-100">
                                             <div className="flex items-center justify-between mb-2">
                                                 <span className="text-xs font-medium text-slate-500 uppercase tracking-wider flex items-center gap-1">
@@ -167,7 +177,7 @@ export default function BedsList() {
                                         </div>
                                     )}
 
-                                    {!sla && bed.status === 'AVAILABLE' && (
+                                    {!sla && bed.state === 'AVAILABLE' && (
                                         <div className="mt-4 pt-3 border-t border-slate-100 text-center">
                                             <span className="text-xs text-slate-400 font-medium tracking-wide">READY FOR PATIENT</span>
                                         </div>

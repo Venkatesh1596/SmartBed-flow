@@ -35,7 +35,7 @@ const Login = () => {
       } else {
         setError('Invalid username or password');
       }
-    } catch (err) {
+    } catch {
       setError('Unable to connect to authentication server');
     } finally {
       setLoading(false);

@@ -18,7 +18,7 @@ def get_audit_logs(
     module: Optional[str] = None,
     action: Optional[str] = None
 ):
-    if current_user.role != Role.ADMIN:
+    if not current_user.role or current_user.role.name.upper() != "ADMIN":
         raise HTTPException(status_code=403, detail="Not enough permissions")
     
     query = db.query(AuditLog)
@@ -50,7 +50,7 @@ def get_audit_summary(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    if current_user.role != Role.ADMIN:
+    if not current_user.role or current_user.role.name.upper() != "ADMIN":
         raise HTTPException(status_code=403, detail="Not enough permissions")
         
     results = db.query(

@@ -126,28 +126,28 @@ const Dashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
         <KpiCard 
           title="Occupancy" 
-          value={`${((summary.beds.occupied / summary.beds.total) * 100).toFixed(1)}%`}
-          label={`${summary.beds.occupied} of ${summary.beds.total} beds filled`}
+          value={`${summary.capacity?.total ? ((summary.capacity.occupied / summary.capacity.total) * 100).toFixed(1) : 0}%`}
+          label={`${summary.capacity?.occupied || 0} of ${summary.capacity?.total || 0} beds filled`}
           icon={Activity}
           colorClass="bg-primary-100 text-primary-600"
         />
         <KpiCard 
           title="Available Beds" 
-          value={summary.beds.available}
+          value={summary.capacity?.available || 0}
           label="Ready for immediate admission"
           icon={BedDouble}
           colorClass="bg-success-100 text-success-600"
         />
         <KpiCard 
           title="In Transit" 
-          value={summary.transport.in_progress}
+          value={summary.transport?.in_progress || 0}
           label="Active patient transports"
           icon={Truck}
           colorClass="bg-info-100 text-info-600"
         />
         <KpiCard 
           title="Pending Clean" 
-          value={summary.evs.pending}
+          value={summary.evs?.pending || summary.capacity?.turnover || 0}
           label="Requires EVS dispatch"
           icon={RefreshCw}
           colorClass="bg-warning-100 text-warning-600"

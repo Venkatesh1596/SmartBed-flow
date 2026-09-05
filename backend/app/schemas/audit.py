@@ -5,7 +5,7 @@ from datetime import datetime
 class AuditLogBase(BaseModel):
     action: str
     entity_type: str
-    entity_id: Optional[str] = None
+    entity_id: Optional[int] = None
     module: str
     previous_state: Optional[Dict[str, Any]] = None
     new_state: Optional[Dict[str, Any]] = None
@@ -20,7 +20,7 @@ class AuditLogResponse(AuditLogBase):
     created_at: datetime
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class AuditLogListResponse(BaseModel):
     total: int

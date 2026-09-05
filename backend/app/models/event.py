@@ -57,3 +57,13 @@ class BedStateEvent(HospitalEvent):
     __mapper_args__ = {
         'polymorphic_identity': 'bed_state_event'
     }
+
+class MaintenanceEvent(HospitalEvent):
+    """
+    Single-table inheritance for MAINTENANCE events.
+    Does not specify a __tablename__ so it maps directly into hospital_events.
+    """
+    __mapper_args__ = {
+        'polymorphic_identity': 'MAINTENANCE'
+    }
+

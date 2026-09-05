@@ -2,12 +2,15 @@ import sys
 import json
 import asyncio
 from fastapi.testclient import TestClient
-from app.main import app
+from backend.app.main import app
+from backend.app.core.security import create_access_token
+from backend.app.db.session import SessionLocal
 
-routes = []
-for route in app.routes:
-    if hasattr(route, 'path'):
-        routes.append(route.path)
+def get_token():
+    return create_access_token(subject="1", role="SYSTEM_ADMIN", facility_id=1)
+
+client = TestClient(app)
+routes = [route.path for route in app.routes if hasattr(route, 'path')]
 
 frontend_paths = [
     '/api/dashboard/summary',
