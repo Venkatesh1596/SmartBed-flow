@@ -20,13 +20,29 @@ VALID_TRANSITIONS = {
 }
 
 class BedStateMachineService:
+    """
+    Manages the deterministic lifecycle of a hospital bed.
+    By enforcing a strict state machine, we prevent clinical workflow collisions
+    (e.g., assigning a patient to a bed that hasn't passed safety verification)
+    and guarantee accurate throughput reporting for the primary KPI.
+    """
     def validate_transition(self, current_state: str, new_state: str) -> bool:
+        """
+        Evaluates whether a state transition is legal according to hospital protocol.
+        We strictly block arbitrary updates to ensure that EVS and Quality Checks
+        are not bypassed by staff rushing an allocation.
+        """
         if current_state == new_state:
             return True # No transition
         allowed = VALID_TRANSITIONS.get(current_state, [])
         return new_state in allowed
 
     def update_bed_state(self, db: Session, bed_id: int, new_state: str, source: str, reason: str = None) -> bool:
+        """
+        Updates the bed state and immutably records the transition.
+        We record the event BEFORE committing the bed state to guarantee that
+        audit trails remain consistent with the active operational reality.
+        """
         from app.models.facility import Bed
         from app.models.event import BedStateEvent
         
@@ -40,20 +56,16 @@ class BedStateMachineService:
             raise ValueError(f"Invalid transition from {current_state} to {new_state}.")
             
         if current_state != new_state:
-            # Record transition
+            # Immutably record transition for SLA reporting and Analytics
             event = BedStateEvent(
                 bed_id=bed_id,
                 old_state=current_state,
                 new_state=new_state,
-                # timestamp=datetime.now(timezone.utc),  # Auto-generated server_default
-                # source=source,
-                # details={"reason": reason}
             )
             db.add(event)
             
-            # Update bed
+            # Persist operational state update
             bed.state = new_state
-            # bed.updated_at = datetime.now(timezone.utc) # Auto-generated onupdate
             db.add(bed)
             db.commit()
             

@@ -62,6 +62,38 @@ The platform optimizes the following critical path:
 - TailwindCSS, Recharts
 - Axios
 
+### API Overview
+The backend routes data through Axios to FastAPI Routers, passing through the Service Layer to the SQLAlchemy ORM.
+
+| Domain | Main API Area | Purpose |
+|---|---|---|
+| Authentication | `/api/auth` | Login/authentication |
+| Beds | `/api/beds` | Bed management |
+| Readiness | `/api/encounters` | Discharge readiness |
+| EVS | `/api/evs` | Cleaning workflow |
+| Transport | `/api/transport` | Patient transport |
+| Allocation | `/api/allocation` | Bed allocation |
+| Prediction | `/api/prediction` | Forecasting |
+| Simulation | `/api/simulation` | Synthetic scenarios |
+| Analytics | `/api/analytics` | Operational analytics |
+| Admin | `/api/admin` | Administration |
+
+*See [docs/api-reference.md](docs/api-reference.md) for full endpoint specifications.*
+
+### Database Overview
+The database enforces strict relationships and transaction-level locking to prevent concurrent operational conflicts (e.g., double-booking a bed).
+
+```mermaid
+graph TD
+    Users --> AuditLogs
+    Facilities --> Users
+    Facilities --> Wards
+    Wards --> Beds
+    Beds --> Encounters
+    Beds --> EVSTasks
+```
+*See [docs/database-schema.md](docs/database-schema.md) for schema details and concurrency rules.*
+
 ---
 
 ## 🚀 Getting Started
