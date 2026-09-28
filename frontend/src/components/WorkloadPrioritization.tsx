@@ -93,7 +93,7 @@ const WorkloadPrioritization = () => {
     }, [days]);
 
     const filteredPriorities = priorities.filter(p => {
-        if (filterPriority !== 'ALL' && p.priority !== filterPriority) return false;
+        if (filterPriority !== 'ALL' && p.priority?.category !== filterPriority) return false;
         if (filterQueue !== 'ALL' && p.type !== filterQueue) return false;
         if (filterWard !== 'ALL' && p.ward !== filterWard) return false;
         return true;
@@ -195,8 +195,8 @@ const WorkloadPrioritization = () => {
                                 <div key={idx} className="p-4 hover:bg-slate-50 transition-colors flex justify-between items-center">
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.priority === 'CRITICAL' ? 'bg-rose-100 text-rose-700' : item.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
-                                                {item.priority}
+                                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${item.priority.category === 'CRITICAL' ? 'bg-rose-100 text-rose-700' : item.priority.category === 'HIGH' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'}`}>
+                                                {item.priority.category}
                                             </span>
                                             <span className="text-xs font-medium bg-slate-200 text-slate-600 px-2 py-0.5 rounded">{item.type}</span>
                                             <span className="text-xs font-semibold text-slate-500">{item.ward}</span>

@@ -38,7 +38,9 @@ class CommandCenterPriority(BaseModel):
     level: str
     message: str
 
-class CommandCenterSummary(BaseModel):
+from app.schemas.freshness import FreshnessMixin
+
+class CommandCenterSummary(FreshnessMixin):
     total_occupancy_percent: float
     total_available_beds: int
     total_active_encounters: int

@@ -41,10 +41,10 @@ def get_workload_distribution(db: Session = Depends(get_db), current_user: User 
     service = WorkloadService(db)
     return service.get_distribution()
 
-@router.get("/priorities", response_model=List[WorkloadPriority])
+@router.get("/priorities", response_model=List[WorkloadItem])
 def get_workload_priorities(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = WorkloadService(db)
-    return [i.priority for i in service.get_all_items()]
+    return service.get_all_items()
 
 @router.get("/recommendations", response_model=List[WorkloadRecommendation])
 def get_workload_recommendations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):

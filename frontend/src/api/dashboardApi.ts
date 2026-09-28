@@ -503,10 +503,9 @@ export async function fetchAuditLogs(filters?: AuditLogFilters): Promise<AuditLo
         const queryStr = params.toString();
         if (queryStr) url += '?' + queryStr;
     }
-    const response = await fetch(url, {
-        headers: getAuthHeaders()
-    });
-    return handleResponse(response);
+    const response = await fetch(url, { headers: getAuthHeaders() });
+    const data = await handleResponse(response);
+    return data.items || [];
 }
 
 export async function fetchMyAuditLogs(filters?: AuditLogFilters): Promise<AuditLog[]> {
@@ -736,9 +735,19 @@ export async function fetchExecutiveWards(days?: number): Promise<ExecutiveWard[
 }
 
 export async function fetchExecutiveTrends(days?: number): Promise<ExecutiveTrend[]> {
-    const url = `${API_BASE}/executive/trends${days ? `?days=${days}` : ''}`;
+    const url = `${API_BASE}/executive/trends${days ? `?period=${days}d` : ''}`;
     const response = await fetch(url, { headers: getAuthHeaders() });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    
+    const trends: Record<string, ExecutiveTrend> = {};
+    if (data.occupancy) {
+        data.occupancy.forEach((pt: any) => {
+            const date = new Date(pt.timestamp).toLocaleDateString();
+            if (!trends[date]) trends[date] = { date, occupancy_rate: 0, admissions: 0, discharges: 0 };
+            trends[date].occupancy_rate = pt.value || 0;
+        });
+    }
+    return Object.values(trends);
 }
 
 export async function fetchExecutiveComparison(days?: number): Promise<ExecutiveComparison[]> {
@@ -796,7 +805,8 @@ export async function fetchAdminConfiguration(): Promise<AdminConfiguration[]> {
 
 export async function fetchAdminUsers(): Promise<AdminUser[]> {
     const response = await fetch(`${API_BASE}/admin/users`, { headers: getAuthHeaders() });
-    return handleResponse(response);
+    const data = await handleResponse(response);
+    return data.users || [];
 }
 
 export async function updateAdminUserStatus(userId: number, isActive: boolean): Promise<any> {
@@ -1281,3 +1291,18 @@ export async function fetchPhase24Validation(): Promise<Phase24ValidationResult>
     return handleResponse(response);
 }
 
+
+export async function fetchEvaluationBaseline(sampleSize = 100): Promise<any> {
+    const response = await fetch(`${API_BASE}/evaluation/baseline?sample_size=${sampleSize}`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchRoutineJourney(): Promise<any> {
+    const response = await fetch(`${API_BASE}/evaluation/journey/routine`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}
+
+export async function fetchSurgeJourney(): Promise<any> {
+    const response = await fetch(`${API_BASE}/evaluation/journey/surge`, { headers: getAuthHeaders() });
+    return handleResponse(response);
+}

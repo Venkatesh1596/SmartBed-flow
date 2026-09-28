@@ -174,12 +174,16 @@ def get_command_center_data(db: Session) -> CommandCenterResponse:
     crit_alerts = sum(1 for p in priorities if p.level == "CRITICAL")
     warn_alerts = sum(1 for p in priorities if p.level == "WARNING")
 
+    from app.schemas.freshness import calculate_freshness
+    freshness_info = calculate_freshness()
+
     summary = CommandCenterSummary(
         total_occupancy_percent=total_occ_pct,
         total_available_beds=total_available_all,
         total_active_encounters=total_active_enc_all,
         critical_alerts=crit_alerts,
-        warning_alerts=warn_alerts
+        warning_alerts=warn_alerts,
+        **freshness_info
     )
 
     return CommandCenterResponse(

@@ -3,7 +3,7 @@ from app.api.endpoints import (
     beds, events, dashboard, auth, encounters, predictions, command_center, sla,
     notifications, audit, reports, executive, admin, capacity, orchestration,
     predictive_operations, simulation, control_tower, workload, benchmarking,
-    phase24_validation, provisioning
+    phase24_validation, provisioning, evaluation
 )
 
 api_router = APIRouter()
@@ -29,3 +29,4 @@ api_router.include_router(workload.router, prefix="/workload", tags=["workload"]
 api_router.include_router(benchmarking.router, prefix="/benchmarking", tags=["benchmarking"])
 api_router.include_router(phase24_validation.router, prefix="/validation/phase24", tags=["phase24-validation"])
 api_router.include_router(provisioning.router, prefix="/provisioning", tags=["provisioning"])
+api_router.include_router(evaluation.router, prefix="/evaluation", tags=["evaluation"])

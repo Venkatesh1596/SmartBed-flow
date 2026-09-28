@@ -112,8 +112,12 @@ class PredictionService:
         bottlenecks = self.get_bottlenecks()
         recs = self.get_recommendations()
         
+        from app.schemas.freshness import calculate_freshness
+        freshness_info = calculate_freshness()
+        
         return PredictionSummary(
             total_beds_predicted_available=len(avail),
             active_bottlenecks=len(bottlenecks),
-            recommendations_count=len(recs)
+            recommendations_count=len(recs),
+            **freshness_info
         )

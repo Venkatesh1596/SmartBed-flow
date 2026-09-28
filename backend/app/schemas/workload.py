@@ -42,7 +42,9 @@ class WorkloadQueue(BaseModel):
     max_priority: float
     items: List[WorkloadItem] = Field(default_factory=list)
 
-class WorkloadSummary(BaseModel):
+from app.schemas.freshness import FreshnessMixin
+
+class WorkloadSummary(FreshnessMixin):
     total_items: int
     critical_items: int
     high_items: int

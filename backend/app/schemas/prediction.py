@@ -16,7 +16,9 @@ class OperationalRecommendation(BaseModel):
     action: str
     reason: str
 
-class PredictionSummary(BaseModel):
+from app.schemas.freshness import FreshnessMixin
+
+class PredictionSummary(FreshnessMixin):
     total_beds_predicted_available: int
     active_bottlenecks: int
     recommendations_count: int

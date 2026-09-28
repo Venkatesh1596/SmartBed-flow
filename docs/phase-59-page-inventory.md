@@ -1,0 +1,16 @@
+# Phase 59 Page Inventory
+- /login
+- /dashboard
+- /beds
+- /capacity
+- /predictive-operations
+- /evaluation
+- /simulation
+- /workload
+- /events
+- /executive
+- /command-center
+- /reports
+- /audit
+- /admin
+- Status: All 14 primary operational pages structurally verified via TS AST.

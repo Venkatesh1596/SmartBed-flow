@@ -5,7 +5,8 @@ import {
   fetchFlowAnalytics, 
   fetchBedAvailabilityPredictions, 
   fetchBottlenecks, 
-  fetchOperationalRecommendations 
+  fetchOperationalRecommendations,
+  fetchEvaluationBaseline
 } from '../api/dashboardApi';
 import { 
   Activity, BedDouble, Truck, RefreshCw, AlertTriangle, TrendingUp 
@@ -41,6 +42,7 @@ const Dashboard: React.FC = () => {
   const [predictions, setPredictions] = useState<any[]>([]);
   const [bottlenecks, setBottlenecks] = useState<any[]>([]);
   const [_recommendations, setRecommendations] = useState<any[]>([]);
+  const [evaluation, setEvaluation] = useState<any>(null);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -51,13 +53,14 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        const [sumRes, trRes, flRes, prRes, bnRes, rcRes] = await Promise.all([
+        const [sumRes, trRes, flRes, prRes, bnRes, rcRes, evalRes] = await Promise.all([
           fetchDashboardSummary(),
           fetchOccupancyTrend(days),
           fetchFlowAnalytics(days),
           fetchBedAvailabilityPredictions(),
           fetchBottlenecks(),
-          fetchOperationalRecommendations()
+          fetchOperationalRecommendations(),
+          fetchEvaluationBaseline(100)
         ]);
         setSummary(sumRes);
         setTrendData(trRes);
@@ -65,6 +68,7 @@ const Dashboard: React.FC = () => {
         setPredictions(prRes || []);
         setBottlenecks(bnRes || []);
         setRecommendations(rcRes || []);
+        setEvaluation(evalRes || null);
       } catch (err: any) {
         console.error("Dashboard error:", err);
         setError('Failed to load dashboard data. Please try again.');
@@ -121,6 +125,75 @@ const Dashboard: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* Primary KPI: Time to Next Safe Bed */}
+      {evaluation && (
+        <Card className="border-2 border-primary-100 shadow-sm bg-gradient-to-r from-slate-50 to-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg text-primary-900 flex items-center justify-between">
+              <span>Primary KPI: Time to Next Safe Bed</span>
+              <Badge variant="info">Synthetic Evaluation Data</Badge>
+            </CardTitle>
+            <p className="text-sm text-slate-500">Time from Clinical Discharge Readiness to Next Safe Bed Available</p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-2">
+              <div>
+                <p className="text-sm font-medium text-slate-500">SmartBed Flow</p>
+                <p className="text-3xl font-bold text-primary-700">{evaluation.smartbed_flow.average_minutes}m</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Baseline Average</p>
+                <p className="text-3xl font-bold text-slate-700">{evaluation.baseline.average_minutes}m</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Absolute Saved</p>
+                <p className="text-3xl font-bold text-success-600">-{evaluation.comparison.absolute_time_saved_minutes}m</p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-slate-500">Improvement</p>
+                <p className="text-3xl font-bold text-success-600">{evaluation.comparison.improvement_percentage}%</p>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-slate-400">Sample Size: {evaluation.smartbed_flow.sample_size} synthetic journeys (Medians: {evaluation.smartbed_flow.median_minutes}m vs {evaluation.baseline.median_minutes}m)</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Bed Flow Pipeline */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bed Flow Pipeline</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col md:flex-row justify-between items-center bg-slate-50 p-6 rounded-xl border border-slate-200">
+            <div className="text-center flex-1">
+              <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold">{summary.capacity?.occupied || 0}</div>
+              <p className="text-sm font-medium">Clinical Ready</p>
+            </div>
+            <div className="hidden md:block w-8 border-t-2 border-dashed border-slate-300"></div>
+            <div className="text-center flex-1">
+              <div className="w-12 h-12 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold">12</div>
+              <p className="text-sm font-medium">Discharge</p>
+            </div>
+            <div className="hidden md:block w-8 border-t-2 border-dashed border-slate-300"></div>
+            <div className="text-center flex-1">
+              <div className="w-12 h-12 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold">{summary.evs?.pending || 0}</div>
+              <p className="text-sm font-medium">Cleaning</p>
+            </div>
+            <div className="hidden md:block w-8 border-t-2 border-dashed border-slate-300"></div>
+            <div className="text-center flex-1">
+              <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold">{summary.capacity?.turnover || 0}</div>
+              <p className="text-sm font-medium">Quality Check</p>
+            </div>
+            <div className="hidden md:block w-8 border-t-2 border-dashed border-slate-300"></div>
+            <div className="text-center flex-1">
+              <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-2 font-bold">{summary.capacity?.available || 0}</div>
+              <p className="text-sm font-medium">Available</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPI Strip */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">

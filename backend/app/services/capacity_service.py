@@ -28,11 +28,15 @@ class CapacityService:
         if total_beds > 0:
             occupancy_rate = occupied_beds / total_beds
             
+        from app.schemas.freshness import calculate_freshness
+        freshness_info = calculate_freshness()
+        
         return CapacitySummary(
             total_beds=total_beds,
             occupied_beds=occupied_beds,
             available_beds=available_beds,
-            occupancy_rate=occupancy_rate
+            occupancy_rate=occupancy_rate,
+            **freshness_info
         )
 
     def get_ward_summaries(self) -> List[WardCapacity]:

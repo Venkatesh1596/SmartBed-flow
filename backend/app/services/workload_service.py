@@ -111,8 +111,11 @@ class WorkloadService:
     def get_summary(self) -> WorkloadSummary:
         items = self.get_all_items()
         total = len(items)
+        from app.schemas.freshness import calculate_freshness
+        freshness_info = calculate_freshness()
+        
         if total == 0:
-            return WorkloadSummary(total_items=0, critical_items=0, high_items=0, avg_priority=0, by_queue={})
+            return WorkloadSummary(total_items=0, critical_items=0, high_items=0, avg_priority=0, by_queue={}, **freshness_info)
             
         critical = sum(1 for i in items if i.priority.category == WorkloadCategory.CRITICAL)
         high = sum(1 for i in items if i.priority.category == WorkloadCategory.HIGH)
@@ -127,7 +130,8 @@ class WorkloadService:
             critical_items=critical,
             high_items=high,
             avg_priority=avg,
-            by_queue=by_queue
+            by_queue=by_queue,
+            **freshness_info
         )
         
     def get_queues(self) -> list[WorkloadQueue]:

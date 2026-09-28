@@ -46,7 +46,9 @@ class EmergencyDemand(BaseModel):
     urgent: int
     routine: int
 
-class DashboardSummary(BaseModel):
+from app.schemas.freshness import FreshnessMixin
+
+class DashboardSummary(FreshnessMixin):
     occupancy_percentage: float
     capacity: CapacitySummary
     beds: List[BedDashboardRow]
@@ -122,6 +124,9 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: User = De
             blocker=blocker
         ))
         
+    from app.schemas.freshness import calculate_freshness
+    freshness_info = calculate_freshness()
+    
     return DashboardSummary(
         occupancy_percentage=(occupied/total*100) if total > 0 else 0.0,
         capacity=CapacitySummary(
@@ -137,7 +142,8 @@ def get_dashboard_summary(db: Session = Depends(get_db), current_user: User = De
             critical=2,
             urgent=5,
             routine=8
-        )
+        ),
+        **freshness_info
     )
 
 

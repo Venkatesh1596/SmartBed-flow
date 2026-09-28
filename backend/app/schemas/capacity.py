@@ -1,7 +1,8 @@
 from pydantic import BaseModel, ConfigDict
 from datetime import datetime
+from app.schemas.freshness import FreshnessMixin
 
-class CapacitySummary(BaseModel):
+class CapacitySummary(FreshnessMixin):
     model_config = ConfigDict(from_attributes=True)
     total_beds: int
     occupied_beds: int
