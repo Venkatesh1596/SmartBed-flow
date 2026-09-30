@@ -1,161 +1,147 @@
 # SmartBed Flow 🏥⚡
 
-> **Intelligent Hospital Bed Turnover & Operational Coordination Platform**
+> **A Full-Stack Hospital Bed-Flow & Operational Coordination Platform**
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-00a393.svg)
-![React](https://img.shields.io/badge/React-18+-61dafb.svg)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178c6.svg)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-336791.svg)
-![License](https://img.shields.io/badge/License-MIT-green.svg)
+![SmartBed Flow Architecture](https://img.shields.io/badge/Architecture-React%20%7C%20FastAPI%20%7C%20PostgreSQL-blue)
+![Testing](https://img.shields.io/badge/Pytest-95%2F95%20Passing-brightgreen)
+![TypeScript](https://img.shields.io/badge/TypeScript-Strict-blue)
 
-## 📖 Overview
+## 📖 Project Overview
+**SmartBed Flow** is a comprehensive operational intelligence platform designed to eliminate the "invisible delays" between a patient's clinical discharge readiness and the next safe bed availability. 
 
-Hospitals face critical bottlenecks between **clinical discharge readiness** and **physical bed availability**. These delays create dangerous ED boarding times, PACU hold-ups, and severe capacity constraints.
+In many hospitals, a bed may become clinically ready for discharge, but uncoordinated EVS (cleaning), quality checks, transport, and allocation stages cause massive bottlenecks. SmartBed Flow connects these isolated operational stages into a **single synchronized workflow**, providing real-time visibility, deterministic allocation recommendations, and strict Role-Based Access Control (RBAC).
 
-**SmartBed Flow** is a full-stack operational coordination platform that connects clinical readiness, Environmental Services (EVS), transport logistics, and bed allocation into a single unified timeline. By observing and coordinating these events, it measurably reduces the time from discharge to the next safe bed.
-
-*⚠️ Note: This is an operational coordination and workflow platform. It does not contain PHI/PII, does not perform medical diagnoses, and does not make autonomous clinical decisions.*
+*Note: This platform is designed strictly for **operational coordination** and throughput tracking. It does not perform autonomous medical diagnosis or clinical decision-making.*
 
 ---
 
-## ✨ Key Features
+## ✨ Core Features & Workflows
 
-- **Real-Time Bed Visibility:** Live dashboards mapping facility, ward, and individual bed states via WebSockets.
-- **Discharge Readiness Tracking:** Clinical milestone checklists and real-time readiness state calculations.
-- **EVS & Cleaning Workflow:** Automated Environmental Services task generation, mandatory quality checks, and safe-bed release protocols.
-- **Intelligent Bed Allocation:** Constraint-validated eligible bed recommendations requiring human approval.
-- **Role-Based Access Control (RBAC):** Strict JWT-secured facility-level isolation for `SYSTEM_ADMIN`, `REGIONAL_DIRECTOR`, `FACILITY_MANAGER`, and `STAFF`.
-- **Predictive Operations:** Forecasting for discharge readiness, bed cleaning times, and capacity bottlenecks.
-- **Surge & Emergency Operations:** Dedicated mass-casualty and surge modes prioritizing critical throughput.
-- **Digital Twin Simulation:** Isolated sandbox for evaluating synthetic scenarios (baseline vs. optimized) without mutating production data.
-- **Comprehensive Analytics:** SLA compliance, operational cost estimation, and robust reporting exports.
+- **End-to-End Bed Lifecycle Tracking:** Seamlessly track beds from `OCCUPIED` → `CLEANING` → `AVAILABLE` → `ALLOCATED`.
+- **EVS & Transport Dispatch:** Automatically generate cleaning tasks upon patient discharge. Dispatch transport teams with real-time UI updates.
+- **Real-Time Operational Websockets:** Multi-user synchronization ensures that when EVS finishes cleaning, the facility manager's allocation board updates instantly.
+- **Deterministic Allocation Engine:** Matches available beds to waiting patients based on strict operational rules and priorities, requiring human approval.
+- **Digital Twin Simulation:** Run isolated "what-if" surge scenarios in memory without corrupting the production PostgreSQL database.
+- **Facility Isolation & Security:** A strict JWT-based middleware ensures users can only mutate data belonging to their assigned facility.
 
 ---
 
-## 🔄 Core Operational Workflow
+## 👥 User Roles (RBAC)
 
-The platform optimizes the following critical path:
+SmartBed Flow implements strict access boundaries for different hospital personas:
 
-1. **Clinical Discharge Readiness** 🩺 *(Milestones met)*
-2. **Patient Discharge** 🚪 *(Transactional state update)*
-3. **Bed CLEANING** 🧹 *(EVS task generated & accepted)*
-4. **Quality Check** ✅ *(Mandatory verification)*
-5. **Bed AVAILABLE** 🛏️ *(Released to allocation pool)*
-6. **Allocation Recommendation** 🧠 *(System suggests best fit)*
-7. **Human Approval & Assignment** 👤 *(Final authorization)*
-8. **Next Patient Flow** 🔁
+1. **`SYSTEM_ADMIN`:** Full access to manage users, configure facilities, and reset passwords. Cannot interfere with daily ward operations.
+2. **`REGIONAL_DIRECTOR`:** Network-level read-only access. Can view cross-facility analytics, load balancing, and transfer recommendations.
+3. **`FACILITY_MANAGER`:** The core operational user. Can allocate beds, discharge patients, manage EVS/Transport queues, and view facility analytics.
+4. **`STAFF`:** Ward-level workers (Nurses, EVS, Porters). Can update readiness milestones and complete assigned tasks, but blocked from administrative functions.
 
 ---
 
-## 🏗️ Architecture & Tech Stack
+## 🛠️ Technology Stack
 
-**Backend:**
-- Python 3.10+, FastAPI
-- SQLAlchemy, Alembic (Migrations)
-- PostgreSQL (Persistence)
-- WebSockets (Real-time events)
+### **Frontend**
+- **React 18** (UI Library)
+- **TypeScript** (Strict Type Safety)
+- **Vite** (Lightning-fast Build Tool)
+- **Tailwind CSS** (Utility-first Responsive Styling)
+- **React Router** (Protected Routing)
 
-**Frontend:**
-- React 18, Vite
-- TypeScript
-- TailwindCSS, Recharts
-- Axios
-
-### API Overview
-The backend routes data through Axios to FastAPI Routers, passing through the Service Layer to the SQLAlchemy ORM.
-
-| Domain | Main API Area | Purpose |
-|---|---|---|
-| Authentication | `/api/auth` | Login/authentication |
-| Beds | `/api/beds` | Bed management |
-| Readiness | `/api/encounters` | Discharge readiness |
-| EVS | `/api/evs` | Cleaning workflow |
-| Transport | `/api/transport` | Patient transport |
-| Allocation | `/api/allocation` | Bed allocation |
-| Prediction | `/api/prediction` | Forecasting |
-| Simulation | `/api/simulation` | Synthetic scenarios |
-| Analytics | `/api/analytics` | Operational analytics |
-| Admin | `/api/admin` | Administration |
-
-*See [docs/api-reference.md](docs/api-reference.md) for full endpoint specifications.*
-
-### Database Overview
-The database enforces strict relationships and transaction-level locking to prevent concurrent operational conflicts (e.g., double-booking a bed).
-
-```mermaid
-graph TD
-    Users --> AuditLogs
-    Facilities --> Users
-    Facilities --> Wards
-    Wards --> Beds
-    Beds --> Encounters
-    Beds --> EVSTasks
-```
-*See [docs/database-schema.md](docs/database-schema.md) for schema details and concurrency rules.*
+### **Backend**
+- **FastAPI** (High-performance Async Python API)
+- **Pydantic V2** (Strict Data Validation & Serialization)
+- **PostgreSQL** (ACID-compliant Relational Database)
+- **SQLAlchemy 2.0** (ORM with row-level `with_for_update` locking)
+- **Alembic** (Database Schema Migrations)
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Installation & Setup
 
 ### Prerequisites
-- [Python 3.10+](https://www.python.org/downloads/)
-- [Node.js 18+](https://nodejs.org/)
-- [PostgreSQL 15+](https://www.postgresql.org/)
-- Git
+- Python 3.10+
+- Node.js 18+
+- PostgreSQL 14+
 
-### 1. Local Setup (Windows Quick Start)
-We have provided batch scripts to automate environment setup, database migrations, and dependency installation.
+### 1. Database Setup
+Ensure PostgreSQL is running locally. Create a database named `smartbed_flow` (or as defined in your `.env`).
 
-```cmd
-git clone https://github.com/Venkatesh1596/SmartBed-flow.git
-cd SmartBed-flow
+### 2. Backend Setup
+```bash
+cd backend
+python -m venv venv
+# Windows: venv\Scripts\activate | Mac/Linux: source venv/bin/activate
+pip install -r requirements.txt
 
-# Installs dependencies, sets up virtual env, and runs Alembic migrations
-scripts\setup.bat
+# Run database migrations to sync schema
+alembic upgrade head
+
+# Seed synthetic demo data
+python -m scripts.seed_demo_data
 ```
 
-### 2. Running the Application
-```cmd
-# Starts both the FastAPI backend and React frontend concurrently
-scripts\start.bat
-```
-- **Frontend:** [http://localhost:5173](http://localhost:5173)
-- **Backend API Docs:** [http://localhost:8000/docs](http://localhost:8000/docs)
-
-### 3. Running the Test Suite
-The repository maintains a robust 95/95 Pytest integration suite and strict TypeScript compilation checks.
-```cmd
-scripts\test.bat
+### 3. Frontend Setup
+```bash
+cd frontend
+npm install
 ```
 
-*(For manual setup instructions, see [docs/local-development.md](docs/local-development.md))*
+---
+
+## 💻 Running the Application
+
+Open two terminal instances.
+
+**Terminal 1 (Backend):**
+```bash
+cd backend
+venv\Scripts\activate
+uvicorn app.main:app --reload
+```
+*API Docs available at: `http://localhost:8000/docs`*
+
+**Terminal 2 (Frontend):**
+```bash
+cd frontend
+npm run dev
+```
+*UI available at: `http://localhost:5173`*
 
 ---
 
-## 📊 Synthetic Evaluation Methodology
+## 🧪 Testing & Verification
 
-SmartBed Flow utilizes a deterministic synthetic simulation engine to evaluate workflow improvements safely. We measure the primary Key Performance Indicator (KPI): **Time from Clinical Discharge Readiness to Next Safe Bed Availability**.
+The project is heavily validated with an automated integration suite covering concurrency, RBAC isolation, and database state transitions.
 
-**Evaluated Patient Journeys:**
-- **Journey A (Standard Flow):** A typical discharge and admission cycle. Read more in [Patient Journey A](docs/patient-journey-a.md).
-- **Journey B (Surge Scenario):** A high-load emergency scenario requiring optimization overrides. Read more in [Patient Journey B](docs/patient-journey-b.md).
+**Run Backend Tests:**
+```bash
+cd backend
+venv\Scripts\activate
+pytest -v
+```
 
----
-
-## 🔒 Security & Data Privacy
-
-- **No Hardcoded Secrets:** Configuration relies strictly on local `.env` files (ignored in version control). See `.env.example` to set up local credentials.
-- **Facility Isolation:** Users are strictly bound to their assigned facilities. Cross-facility access is denied at the API layer unless the user possesses Regional/System privileges.
-- **Immutable Audit Logging:** All operational mutations (bed state changes, allocations, approvals) generate immutable audit trails.
-
----
-
-## 📜 Documentation
-
-Extensive project documentation, including complete Phase 58/59 Architectural Audits, API Contract Matrices, and Security Reports, can be found in the [`docs/`](docs/) directory.
+**Run Frontend Compilation Check:**
+```bash
+cd frontend
+npx tsc -b
+```
 
 ---
 
-## ⚖️ License
-This project is licensed under the MIT License.
+## 📚 Project Documentation & Viva Prep
+
+Extensive documentation mapping the complete API-to-Database lifecycle, Operational Acceptance Testing (OAT), and Viva (Defense) guides are available in the `/docs` directory:
+
+- `docs/viva-architecture-guide.md` - Design decisions (Why FastAPI? Why React?).
+- `docs/viva-database-guide.md` - Schema and transaction logic.
+- `docs/viva-security-guide.md` - JWT, Hashing, and Facility Isolation.
+- `docs/final-demo-script.md` - A verified 5-minute operational walkthrough.
+- `docs/page-button-api-database-map.md` - Exhaustive map of every UI handler to its SQL mutation.
+
+---
+
+## ⚠️ Known Limitations
+- **Browser Automation (UAT):** Due to OS-level graphical execution limits in headless sandbox environments, automated DOM clicks (e.g., Playwright) are not packaged. Programmatic API and Component AST tests act as the primary validation layer.
+- **Synthetic Data:** The system relies on seeded synthetic data for demonstration; it does not currently connect to a live hospital HL7/FHIR EHR feed.
+
+---
+*Built for modern hospital operational intelligence.*
