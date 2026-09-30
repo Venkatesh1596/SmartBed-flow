@@ -1,11 +1,28 @@
 # Final Release Checklist
 
-- [x] Repository clean (No secrets in `.env` committed)
-- [x] README complete
-- [x] Database/Alembic synchronized
+- [x] Backend starts
+- [x] Frontend starts
+- [x] PostgreSQL starts
+- [x] Alembic synchronized
+- [x] Authentication verified
 - [x] RBAC verified
 - [x] Facility isolation verified
-- [x] Tests passing (95/95)
-- [x] TypeScript passing (0 errors)
-- [x] Viva guide created
-- [x] Browser limitation documented
+- [x] Core bed workflow verified
+- [x] EVS verified
+- [x] Allocation verified
+- [x] Transport verified
+- [x] Notifications verified
+- [x] Audit verified
+- [x] Analytics verified
+- [x] Reports verified
+- [x] Security tests passed
+- [x] Backend tests passed
+- [x] TypeScript passed
+- [x] Production build passed
+- [x] Repository secrets checked
+- [x] Documentation checked
+- [x] Demo data available
+- [x] Demo script prepared
+- [x] Viva preparation prepared
+- [x] Browser limitation documented 
+- [x] Remote CI limitation documented 

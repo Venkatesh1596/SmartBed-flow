@@ -145,3 +145,13 @@ Extensive documentation mapping the complete API-to-Database lifecycle, Operatio
 
 ---
 *Built for modern hospital operational intelligence.*
+  
+## ?? Technical Documentation  
+- [API Reference](docs/api-reference.md)  
+- [Database Schema](docs/database-schema.md)  
+
+
+## 📚 Technical Documentation
+- [API Reference](docs/api-reference.md)
+- [Database Schema](docs/database-schema.md)
+- [Testing & ErrorBoundary Architecture](docs/testing-and-validation.md)
